@@ -6,6 +6,7 @@ import load_est.constants as constants
 import collections
 import time
 import numpy as np
+import math
 import pandas as pd
 pd.options.display.width = 0
 
@@ -154,14 +155,6 @@ class Station:
 
 		return good_data
 
-	def update_psse_load(self):
-
-		print(loads)
-
-		return None
-
-
-
 
 class Constants:
 
@@ -282,7 +275,7 @@ def create_stations(df_dict):
 	st_dict = collections.OrderedDict()
 
 	for name, net in df_dict.iteritems():
-		print (name)
+		logger.info('Processing: ' + name)
 
 		bsp_idx = net[net[Constants.gsp_str] == name].index.item()
 		bsp_df = net.iloc[bsp_idx:bsp_idx + Constants.bsp_no_rows]
@@ -366,6 +359,9 @@ def update_loads(psse_case, station_dict, year=str(), season=str()):
 
 		for num, psse_bus in station.psse_buses_dict.iteritems():
 
+			p = station.load_forecast_dict[year] * station.seasonal_percent_dict[season]
+			q = p * math.tan(math.acos(station.pf['p.f']))
+
 			# if there is load at the station bus
 			if psse_bus in loads_list:
 				ierr = psspy.load_chng_5(
@@ -374,28 +370,27 @@ def update_loads(psse_case, station_dict, year=str(), season=str()):
 					realar1=10,  # P load MW
 					realar2=10)  # Q load MW
 
-			for i in xrange(0, station.no_sub_stations):
+		for i in xrange(0, station.no_sub_stations):
 
-				sub_station = station.sub_stations_dict[i]
+			sub_station = station.sub_stations_dict[i]
 
-				for sub_num, sub_psse_bus in sub_station.psse_buses_dict.iteritems():
+			for sub_num, sub_psse_bus in sub_station.psse_buses_dict.iteritems():
 
-					if sub_psse_bus is np.nan:
-						continue
-					if sub_psse_bus in loads_list:
-						p = sub_station.load_forecast_dict[year]
-						# todo Q calc
-						q = p * 0.95
-						# loads at the substations buses
+				if sub_psse_bus is np.nan:
+					continue
+				if sub_psse_bus in loads_list:
+					p = sub_station.load_forecast_dict[year] * sub_station.seasonal_percent_dict[season]
+					q = p * math.tan(math.acos(sub_station.pf['p.f']))
+					# loads at the substations buses
 
-						ierr = psspy.load_chng_5(
-							ibus=sub_psse_bus,
-							id=loads_df.loc[sub_psse_bus, 'ID'],
-							realar1=p,  # P load MW
-							realar2=q)  # Q load MW
-					else:
-						print('Bus number ' + str(sub_psse_bus) + ' not in PSSE sav case')
-
+					ierr = psspy.load_chng_5(
+						ibus=sub_psse_bus,
+						id=loads_df.loc[sub_psse_bus, 'ID'],
+						realar1=p,  # P load MW
+						realar2=q)  # Q load MW
+					break
+				else:
+					logger.info('Bus number ' + str(sub_psse_bus) + ' not in PSSE sav case')
 
 	return None
 
@@ -435,17 +430,17 @@ if __name__ == '__main__':
 	# Produce initial log messages and decorate appropriately
 	logger.log_colouring(run_in_psse=psse_con.run_in_psse)
 
-	# Run main study
-	logger.info('Study started')
+	# # Run main study
+	# logger.info('Study started')
 
 	# ------------------------------------------------------------------------------------------------------------------
 	# workbook to open
-	excel_filename = r'C:\Users\Grant\Desktop\2019-20 SHEPD Load Estimates - v4.xlsx'
+	excel_filename = r'2019-20 SHEPD Load Estimates - v4.xlsx'
 	# worksheet to open
 	excel_ws_name = 'MASTER Based on SubstationLoad'
-
+	file_path = os.path.join(cur_path, example_folder, excel_filename)
 	# load worksheet into dataframe
-	raw_dataframe = sse_load_xl_to_df(excel_filename, excel_ws_name)
+	raw_dataframe = sse_load_xl_to_df(file_path, excel_ws_name)
 
 	# extract individual BSPs
 	network_df_dict = extract_bsp_dfs(raw_dataframe)
@@ -453,20 +448,22 @@ if __name__ == '__main__':
 	# create station dictionary
 	station_dict = create_stations(network_df_dict)
 
-	# if Constants.DEBUG:
-	# 	with pd.ExcelWriter(r'C:\Users\Grant\Desktop\raw.xlsx') as writer:
-	# 		Constants.good_data.to_excel(writer, sheet_name='Complete Load Data')
-	# 		Constants.bad_data.to_excel(writer, sheet_name='Missing Load Data')
+	if Constants.DEBUG:
+		file_name = r'raw.xlsx'
+		file_path = os.path.join(cur_path, example_folder, file_name)
+		sheet1 = 'Complete Load Data'
+		sheet2 = 'Missing Load Data'
+		with pd.ExcelWriter(file_path) as writer:
+			Constants.good_data.to_excel(writer, sheet_name=sheet1)
+			Constants.bad_data.to_excel(writer, sheet_name=sheet2)
+			worksheet1 = writer.sheets[sheet1]
+			worksheet1.set_tab_color('green')
+			worksheet1 = writer.sheets[sheet2]
+			worksheet1.set_tab_color('red')
 
-	year = r'2027 / 2028'
-	season = 'Summer'
-
-	constants.GUI.year_list = station_dict[0].load_forecast_dict.keys()
-	constants.GUI.season_list = station_dict[0].seasonal_percent_dict.keys()
+	constants.GUI.year_list = sorted(station_dict[0].load_forecast_dict.keys())
+	constants.GUI.season_list = sorted(station_dict[0].seasonal_percent_dict.keys())
 	constants.GUI.station_dict = station_dict
 
 	gui = load_est.gui.MainGUI()
 
-
-
-print 'finished'
