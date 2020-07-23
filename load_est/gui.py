@@ -84,6 +84,7 @@ class MainGUI:
 		# Add button for selecting SAV case to run
 		self.add_cmd_sav_case(row=self.row(1), col=self.col())
 
+		self.row(2)
 		# add drop down list for year
 		self.year_selected = Tk.StringVar(self.master)
 		self.year_list = constants.GUI.year_list
@@ -96,6 +97,7 @@ class MainGUI:
 			list=self.year_list
 		)
 
+		self.row(2)
 		# add drop down list for season
 		self.season_selected = Tk.StringVar(self.master)
 		self.season_list = constants.GUI.season_list
@@ -123,6 +125,7 @@ class MainGUI:
 		# # Add a text entry box for fault times to be added as a comma separated list
 		# self.add_entry_fault_times(row=self.row(1), col=self.col())
 
+		self.row(2)
 		# Add button for calculating and saving fault currents
 		self.add_cmd_calculate_faults(row=self.row(2), col=self.col())
 
@@ -187,8 +190,7 @@ class MainGUI:
 			var,
 			*list
 		)
-		w.grid(row=row, column=col)
-		w.configure(width=25)
+		w.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E)
 
 		# return dropdown_optimisation_options
 		return
@@ -211,10 +213,11 @@ class MainGUI:
 			self.master,
 			text=lbl_sav_button,
 			command=self.select_sav_case)
-		self.cmd_select_sav_case.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E)
-		CreateToolTip(widget=self.cmd_select_sav_case, text=(
-			'Select the SAV case for which fault studies should be run.'
-		))
+		# self.cmd_select_sav_case.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E)
+		self.cmd_select_sav_case.grid(row=row, column=col, columnspan=2)
+		# CreateToolTip(widget=self.cmd_select_sav_case, text=(
+		# 	'Select the SAV case for which fault studies should be run.'
+		# ))
 		return None
 
 	def add_cmd_import_busbars(self, row, col):
@@ -586,8 +589,8 @@ class MainGUI:
 		"""
 		# Ask user to confirm that they actually want to close the window
 		result = tkMessageBox.askquestion(
-			title='Exit fault study?',
-			message='Are you sure you want to stop this fault study?',
+			title='Exit?',
+			message='Are you sure you want to exit',
 			icon='warning'
 		)
 

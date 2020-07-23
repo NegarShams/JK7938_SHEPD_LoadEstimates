@@ -349,6 +349,7 @@ def update_loads(psse_case, station_dict, year=str(), season=str()):
 	# Check if PSSE is running and if so retrieve list of selected busbars, else return empty list
 	psse_con = load_est.psse.PsseControl()
 	psse_con.load_data_case(pth_sav=psse_case)
+	psse_con.change_output(destination=False)
 
 	loads = psse.LoadData()
 	loads_df = loads.df.set_index('NUMBER')
