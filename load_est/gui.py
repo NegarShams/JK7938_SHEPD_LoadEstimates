@@ -20,8 +20,8 @@ import webbrowser
 from PIL import Image, ImageTk
 
 # Package specific imports
-import g74
-import g74.constants as constants
+import load_est
+import load_est.constants as constants
 
 
 class MainGUI:
@@ -82,26 +82,29 @@ class MainGUI:
 
 		# Add button for selecting SAV case to run
 		self.add_cmd_sav_case(row=self.row(1), col=self.col())
-		self.add_reload_sav(row=self.row(1), col=self.col())
+		# self.add_reload_sav(row=self.row(1), col=self.col())
 
-		_ = Tk.Label(self.master, text='Select Fault Studies to Include').grid(
-			row=self.row(1), column=self.col(), sticky=Tk.W + Tk.E
-		)
+		# _ = Tk.Label(self.master, text='Select Fault Studies to Include').grid(
+		# 	row=self.row(1), column=self.col(), sticky=Tk.W + Tk.E
+		# )
 		# Add tick boxes for fault types to include
-		self.add_fault_types(col=self.col())
+		# self.add_fault_types(col=self.col())
 
 		# Add button for importing / viewing busbars
-		self.add_cmd_import_busbars(row=self.row(1), col=self.col())
-		self.add_cmd_edit_busbars(row=self.row(), col=self.col()+1)
+		# self.add_cmd_import_busbars(row=self.row(1), col=self.col())
+		# self.add_cmd_edit_busbars(row=self.row(), col=self.col()+1)
 
 		# Add a text entry box for fault times to be added as a comma separated list
-		self.add_entry_fault_times(row=self.row(1), col=self.col())
+		# self.add_entry_fault_times(row=self.row(1), col=self.col())
 
-		# Add button for calculating and saving fault currents
-		self.add_cmd_calculate_faults(row=self.row(2), col=self.col())
+		# # Add button for calculating and saving fault currents
+		# self.add_cmd_calculate_faults(row=self.row(2), col=self.col())
+		#
+		# # Add tick box for whether it needs to be opened again on completion
+		# self.add_open_excel(row=self.row(1), col=self.col())
 
-		# Add tick box for whether it needs to be opened again on completion
-		self.add_open_excel(row=self.row(1), col=self.col())
+		# add drop down for year
+		self.dropdown_circuit_rat = self.add_list_circuit_rating(row=self.row(), col=self.col() + 1, _sticky="e")
 
 		# Add help button which loads work instructions
 		self.add_hyp_help_instructions(row=self.row(1), col=self.col())
@@ -166,6 +169,36 @@ class MainGUI:
 			'Select the SAV case for which fault studies should be run.'
 		))
 		return None
+
+	def add_list_circuit_rating(self, row, col, _sticky):
+		"""
+			General function just adds the list to the circuit rating
+		:param int row: Row number to use
+		:param int col: Column number to use
+		:param str _sticky: Relevant positioning of the widget
+		:rtype Tk.OptionMenu
+		:return dropdown_circuit_rat:
+		"""
+		# Check whether there is a successfully loaded SAV case to enable the list option
+		if self.success:
+			status_list = "normal"
+			circuit_rating_menu = self.ratings
+		else:
+			status_list = "disabled"
+			circuit_rating_menu = self.dft_menu_ratings
+		# Create a drop down list and define default value
+		for key in circuit_rating_menu:
+			self.list_circuit_rat.set(circuit_rating_menu[key])
+			break
+		for key in circuit_rating_menu:
+			self.menu_circuit_rat.append(circuit_rating_menu[key])
+		# Create the drop down list to be shown in the GUI
+		dropdown_circuit_rating = ttk.OptionMenu(
+			self.master, self.list_circuit_rat, *self.menu_circuit_rat, style=self.styles.rating_options
+		)
+		dropdown_circuit_rating.grid(row=row, column=col, sticky=_sticky, padx=6)
+		dropdown_circuit_rating.configure(state=status_list, width=1)
+		return dropdown_circuit_rating
 
 	def add_cmd_import_busbars(self, row, col):
 		"""
@@ -415,7 +448,7 @@ class MainGUI:
 		)
 
 		# Import busbar list from file assuming it is first column and append to existing list
-		busbars = g74.file_handling.import_busbars_list(path=file_path)
+		busbars = load_est.file_handling.import_busbars_list(path=file_path)
 		self.selected_busbars.extend(busbars)
 
 		# Update results path to include this name

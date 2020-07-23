@@ -1,8 +1,8 @@
 import unittest
 import os
 import sys
-import g74
-import g74.gui as test_module
+import load_est
+import load_est.gui as test_module
 
 
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -26,7 +26,7 @@ class TestGui(unittest.TestCase):
 			Initialise logger
 		"""
 		# Initialise logger
-		cls.logger = g74.Logger(pth_logs=TEST_LOGS, uid='TestGUI', debug=g74.constants.DEBUG_MODE)
+		cls.logger = load_est.Logger(pth_logs=TEST_LOGS, uid='TestGUI', debug=load_est.constants.DEBUG_MODE)
 
 	def test_file_selection(self):
 		"""Tests for the file selection function"""

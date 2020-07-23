@@ -1,7 +1,20 @@
+import os
+import sys
+import load_est
+import load_est.psse as psse
+import load_est.constants as constants
 import collections
+import time
 import numpy as np
 import pandas as pd
 pd.options.display.width = 0
+
+sys_path_PSSE = r'C:\Program Files (x86)\PTI\PSSE34\PSSPY27'  # or where else you find the psspy.pyc
+sys.path.append(sys_path_PSSE)
+os_path_PSSE = r'C:\Program Files (x86)\PTI\PSSE34\PSSBIN'  # or where else you find the psse.exe
+os.environ['PATH'] += ';' + os_path_PSSE
+os.environ['PATH'] += ';' + sys_path_PSSE
+import psspy
 
 
 class Station:
@@ -140,6 +153,14 @@ class Station:
 				Constants.bad_data = Constants.bad_data.append(df)
 
 		return good_data
+
+	def update_psse_load(self):
+
+		print(loads)
+
+		return None
+
+
 
 
 class Constants:
@@ -323,9 +344,104 @@ def exp_stations_to_excel(st_dict):
 	return df
 
 
+def update_loads(station_dict, year=str(), season=str()):
+	"""
+	Function to update station loads
+	:param dict() station_dict: dictionary of station objects
+	:param str() year:
+	:param str() season:
+	:return:
+	"""
+
+	loads = psse.LoadData()
+	loads_df = loads.df.set_index('NUMBER')
+
+	loads_list = map(int, list(loads_df.index))
+
+	for station_no, station in station_dict.iteritems():
+
+		for num, psse_bus in station.psse_buses_dict.iteritems():
+
+			# if there is load at the station bus
+			if psse_bus in loads_list:
+				ierr = psspy.load_chng_5(
+					ibus=psse_bus,
+					id=loads_df.loc[psse_bus, 'ID'],
+					realar1=10,  # P load MW
+					realar2=10)  # Q load MW
+
+			for i in xrange(0, station.no_sub_stations):
+
+				sub_station = station.sub_stations_dict[i]
+
+				for sub_num, sub_psse_bus in sub_station.psse_buses_dict.iteritems():
+
+					if sub_psse_bus is np.nan:
+						continue
+					if sub_psse_bus in loads_list:
+						p = sub_station.load_forecast_dict[year]
+						# todo Q calc
+						q = p * 0.95
+						# loads at the substations buses
+
+						ierr = psspy.load_chng_5(
+							ibus=sub_psse_bus,
+							id=loads_df.loc[sub_psse_bus, 'ID'],
+							realar1=p,  # P load MW
+							realar2=q)  # Q load MW
+					else:
+						print('Bus number not in PSSE save - skipping')
+
+
+	return None
+
+
 if __name__ == '__main__':
 
-	Constants.DEBUG = 1
+	gui = load_est.simple_GUI.MainGUI()
+
+	"""
+		This is the main block of code that will be run if this script is run directly
+	"""
+	Constants.DEBUG = 0
+
+	# Time stamp for performance checking
+	t0 = time.time()
+
+	# Produce unique identifier for logger
+	uid = 'BKDY_{}'.format(time.strftime('%Y%m%d_%H%M%S'))
+
+	# Check temp folder exists to store log files in and if not create appropriate folders
+	script_path = os.path.realpath(__file__)
+	script_folder = os.path.dirname(script_path)
+	temp_folder = os.path.join(script_folder, 'temp')
+	if not os.path.exists(temp_folder):
+		os.mkdir(temp_folder)
+	logger = load_est.Logger(pth_logs=temp_folder, uid=uid, debug=constants.DEBUG_MODE)
+
+	# Check if PSSE is running and if so retrieve list of selected busbars, else return empty list
+	psse_con = load_est.psse.PsseControl()
+
+	# current project path
+	cur_path = os.path.dirname(__file__)
+	example_folder = r'load_est\test_files'
+	file_name = r'SHEPD 2018 LTDS Winter Peak.sav'
+	file_path = os.path.join(cur_path, example_folder, file_name)
+
+	init_psse = psse.InitialisePsspy()
+	init_psse.initialise_psse()
+
+	psse_con.load_data_case(pth_sav=file_path)
+
+	# init_psse.load_data_case()
+
+	# Produce initial log messages and decorate appropriately
+	logger.log_colouring(run_in_psse=psse_con.run_in_psse)
+
+	# Run main study
+	logger.info('Study started')
+
+	# ------------------------------------------------------------------------------------------------------------------
 	# workbook to open
 	excel_filename = r'C:\Users\Grant\Desktop\2019-20 SHEPD Load Estimates - v4.xlsx'
 	# worksheet to open
@@ -344,5 +460,9 @@ if __name__ == '__main__':
 		with pd.ExcelWriter(r'C:\Users\Grant\Desktop\raw.xlsx') as writer:
 			Constants.good_data.to_excel(writer, sheet_name='Complete Load Data')
 			Constants.bad_data.to_excel(writer, sheet_name='Missing Load Data')
+
+	year = r'2027 / 2028'
+	season = 'Summer'
+	update_loads(station_dict, year=year, season=season)
 
 print 'finished'

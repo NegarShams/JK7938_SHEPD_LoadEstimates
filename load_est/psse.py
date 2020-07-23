@@ -10,7 +10,7 @@
 """
 
 # Project specific imports
-import g74.constants as constants
+import load_est.constants as constants
 
 # Generic python package imports
 import sys
@@ -26,6 +26,12 @@ import re
 DEFAULT_PSSE_VERSION = 33
 
 # TODO: Report error for busbars which do not actually exist in model
+# import PSSE:
+sys_path_PSSE = r'C:\Program Files (x86)\PTI\PSSE34\PSSPY27'  # or where else you find the psspy.pyc
+sys.path.append(sys_path_PSSE)
+os_path_PSSE = r'C:\Program Files (x86)\PTI\PSSE34\PSSBIN'  # or where else you find the psse.exe
+os.environ['PATH'] += ';' + os_path_PSSE
+os.environ['PATH'] += ';' + sys_path_PSSE
 
 
 def extract_values(line, expected_length=0):
@@ -173,7 +179,7 @@ class InitialisePsspy:
 		# Produce directory for standard installation
 		self.psse_py_path = os.path.join(self.c.program_files_directory, self.c.psse_paths[self.psse_version])
 		self.psse_os_path = os.path.join(self.c.program_files_directory, self.c.os_paths[self.psse_version])
-		
+
 		# Check if these paths actually exist and if not then carry out a search for PSSE
 		if not os.path.exists(self.psse_py_path) and not os.path.exists(self.psse_os_path):
 			t0 = time.time()
@@ -192,7 +198,7 @@ class InitialisePsspy:
 
 		if self.psse_py_path not in os.environ['PATH']:
 			os.environ['PATH'] += ';{}'.format(self.psse_py_path)
-		
+
 		return self.psse_py_path, self.psse_os_path
 
 	def find_psspy(self, start_directory='C:\\'):
@@ -228,7 +234,7 @@ class InitialisePsspy:
 				break
 
 		return psse_py_path, psse_os_path
-	
+
 	def initialise_psse(self, running_from_psse=False):
 		"""
 			Initialise PSSE
@@ -1453,7 +1459,7 @@ class BkdyFaultStudy:
 			Two iterations of the fault current calculations are performed, one for every timestep with machines
 			initialised for time == 0ms and then for every timestep with machine parameters recalculated.
 		:param list fault_times:  List of the fault times that should be considered
-		:param G74FaultInfeed() g74_infeed:  Reference to the g74 handle so that machine parameters can be updated
+		:param G74FaultInfeed() g74_infeed:  Reference to the load_est handle so that machine parameters can be updated
 		:param list buses: (optional) List of busbars to be faulted if empty list then all busbars faulted
 		:param bool delete: (optional=True) - Will delete the original bkdy output files
 		:return None:

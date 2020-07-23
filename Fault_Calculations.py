@@ -11,8 +11,8 @@
 
 # Modules to be imported first
 import os
-import g74
-import g74.constants as constants
+import load_est
+import load_est.constants as constants
 import time
 import pandas as pd
 
@@ -31,7 +31,7 @@ def fault_study(
 	"""
 		Run G74 fault study calculation using PSSE BKDY or IEC methods and obtain the
 		fault current at all the busbars that have been listed.
-	:param g74.PsseControl psse_handler:  Handle for the psse interface engine
+	:param load_est.PsseControl psse_handler:  Handle for the psse interface engine
 	:param str local_uid:  Unique identifier for this study used to append to files
 	:param str sav_case:  Full path to the SAV case that should be used for the fault study
 	:param str local_temp_folder:  Local temporary folder into which to save temporary data
@@ -61,13 +61,13 @@ def fault_study(
 	t = time.time()
 
 	# Create the files for the existing machines that will be used for the BKDY fault study
-	bkdy = g74.psse.BkdyFaultStudy(psse_control=psse_handler)
+	bkdy = load_est.psse.BkdyFaultStudy(psse_control=psse_handler)
 	bkdy.create_breaker_duty_file(target_path=temp_bkd_file)
 	local_logger.info('Took {:.2f} seconds to create BKDY files for machines'.format(time.time()-t))
 	t = time.time()
 
 	# Update model to include contribution from embedded machines
-	g74_data = g74.psse.G74FaultInfeed()
+	g74_data = load_est.psse.G74FaultInfeed()
 	g74_data.identify_machine_parameters()
 	g74_data.calculate_machine_mva_values()
 	local_logger.info(
@@ -134,14 +134,14 @@ def fault_study(
 def get_busbars(psse_handler):
 	"""
 		Determines if PSSE is running and if so will return a list of busbars
-	:param g74.PsseControl psse_handler:  Handle to controller for psse
+	:param load_est.PsseControl psse_handler:  Handle to controller for psse
 	:return:
 	"""
 	psse_handler.running_from_psse()
 	if psse_handler.run_in_psse:
 		# Initialise PSSE so have access to all required variables
-		_ = g74.psse.InitialisePsspy().initialise_psse(running_from_psse=psse_handler.run_in_psse)
-		busbars = g74.psse.PsseSlider().get_selected_busbars()
+		_ = load_est.psse.InitialisePsspy().initialise_psse(running_from_psse=psse_handler.run_in_psse)
+		busbars = load_est.psse.PsseSlider().get_selected_busbars()
 		sav_case = psse_handler.get_current_sav_case()
 	else:
 		busbars = list()
@@ -166,10 +166,10 @@ if __name__ == '__main__':
 	temp_folder = os.path.join(script_folder, 'temp')
 	if not os.path.exists(temp_folder):
 		os.mkdir(temp_folder)
-	logger = g74.Logger(pth_logs=temp_folder, uid=uid, debug=constants.DEBUG_MODE)
+	logger = load_est.Logger(pth_logs=temp_folder, uid=uid, debug=constants.DEBUG_MODE)
 
 	# Check if PSSE is running and if so retrieve list of selected busbars, else return empty list
-	psse = g74.psse.PsseControl()
+	psse = load_est.psse.PsseControl()
 
 	# Produce initial log messages and decorate appropriately
 	logger.log_colouring(run_in_psse=psse.run_in_psse)
@@ -177,16 +177,16 @@ if __name__ == '__main__':
 	# Run main study
 	logger.info('Study started')
 
-	selected_busbars, current_sav_case = get_busbars(psse)
-
-	if current_sav_case:
-		# TODO: Better way to do this, maybe GUI popup asking user whether to save SAV case before making updates
-		logger.warning(
-			'If the current SAV case has not been saved prior to running study, changes will be lost when reloaded'
-		)
+	# selected_busbars, current_sav_case = get_busbars(psse)
+	#
+	# if current_sav_case:
+	# 	# TODO: Better way to do this, maybe GUI popup asking user whether to save SAV case before making updates
+	# 	logger.warning(
+	# 		'If the current SAV case has not been saved prior to running study, changes will be lost when reloaded'
+	# 	)
 
 	# Load GUI and ask user to select required inputs
-	gui = g74.gui.MainGUI(sav_case=current_sav_case, busbars=selected_busbars)
+	gui = load_est.gui.MainGUI()
 
 	# Determine whether user aborted study rather than selecting SAV case
 	if gui.abort:
@@ -218,3 +218,6 @@ if __name__ == '__main__':
 		logger.info('Complete with total study time of {:.2f} seconds'.format(time.time()-t0))
 		# Restore PSSE output to normal
 		psse.change_output(destination=constants.PSSE.output_default)
+
+
+

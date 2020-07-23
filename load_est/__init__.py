@@ -128,10 +128,10 @@ except ImportError:
 # Package imports
 try:
 	# Try and import G74 packages
-	import g74.constants as constants
-	import g74.psse as psse
-	import g74.file_handling as file_handling
-	import g74.gui as gui
+	import load_est.constants as constants
+	import load_est.psse as psse
+	import load_est.file_handling as file_handling
+	import load_est.gui as gui
 except ImportError:
 	t0 = time.time()
 	# TODO: Add in a check to confirm that the files actually exist
@@ -155,10 +155,10 @@ except ImportError:
 			'Unless the batch file showed an error packages have now been installed and took {:.2f} seconds'
 		).format(time.time()-t0)
 	)
-	import g74.constants as constants
-	import g74.psse as psse
-	import g74.file_handling as file_handling
-	import g74.gui as gui
+	import load_est.constants as constants
+	import load_est.psse as psse
+	import load_est.file_handling as file_handling
+	import load_est.gui as gui
 	print('All modules now imported correctly')
 
 # Meta Data
@@ -216,7 +216,7 @@ class Logger:
 		:param str pth_logs:  Path to where all log files will be stored
 		:param str uid:  Unique identifier for log files
 		:param bool debug:  True / False on whether running in debug mode or not
-		:param g74.psse.PsseControl() app: (optional) - If not None then will use this to provide updates to powerfactory
+		:param load_est.psse.PsseControl() app: (optional) - If not None then will use this to provide updates to powerfactory
 		"""
 		# Constants
 		self.log_constants = constants.Logging

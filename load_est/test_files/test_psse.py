@@ -9,9 +9,9 @@
 #######################################################################################################################
 """
 
-import g74
-import g74.psse as test_module
-import g74.constants as constants
+import load_est
+import load_est.psse as test_module
+import load_est.constants as constants
 
 import unittest
 import os
@@ -49,7 +49,7 @@ class TestPsseInitialise(unittest.TestCase):
 			Load the SAV case into PSSE for further testing
 		"""
 		# Initialise logger
-		cls.logger = g74.Logger(pth_logs=TEST_LOGS, uid='TestPSSEInitialise', debug=g74.constants.DEBUG_MODE)
+		cls.logger = load_est.Logger(pth_logs=TEST_LOGS, uid='TestPSSEInitialise', debug=load_est.constants.DEBUG_MODE)
 
 	def test_psse32_psspy_import_fail(self):
 		"""
@@ -122,7 +122,7 @@ class TestPsseControl(unittest.TestCase):
 			Load the SAV case into PSSE for further testing
 		"""
 		# Initialise logger
-		cls.logger = g74.Logger(pth_logs=TEST_LOGS, uid='TestPsseControl', debug=g74.constants.DEBUG_MODE)
+		cls.logger = load_est.Logger(pth_logs=TEST_LOGS, uid='TestPsseControl', debug=load_est.constants.DEBUG_MODE)
 		cls.psse = test_module.PsseControl()
 		cls.psse.load_data_case(pth_sav=SAV_CASE_COMPLETE)
 
@@ -197,7 +197,7 @@ class TestBkdyNonPSSEComponents(unittest.TestCase):
 			Load the SAV case into PSSE for further testing
 		"""
 		# Initialise logger
-		cls.logger = g74.Logger(pth_logs=TEST_LOGS, uid='TestBkdyComponents', debug=g74.constants.DEBUG_MODE)
+		cls.logger = load_est.Logger(pth_logs=TEST_LOGS, uid='TestBkdyComponents', debug=load_est.constants.DEBUG_MODE)
 		# #cls.bkdy = test_module.BkdyFaultStudy()
 		cls.output_file = os.path.join(TESTS_DIR, 'bkdy_output{}'.format(constants.General.ext_csv))
 
@@ -253,7 +253,7 @@ class TestBkdyComponents(unittest.TestCase):
 			Load the SAV case into PSSE for further testing
 		"""
 		# Initialise logger
-		cls.logger = g74.Logger(pth_logs=TEST_LOGS, uid='TestBkdyComponents', debug=g74.constants.DEBUG_MODE)
+		cls.logger = load_est.Logger(pth_logs=TEST_LOGS, uid='TestBkdyComponents', debug=load_est.constants.DEBUG_MODE)
 		cls.psse = test_module.PsseControl()
 		cls.psse.load_data_case(pth_sav=SAV_CASE_COMPLETE)
 
@@ -388,7 +388,7 @@ class TestBkdyIntegration(unittest.TestCase):
 			Load the SAV case into PSSE for further testing
 		"""
 		# Initialise logger
-		cls.logger = g74.Logger(pth_logs=TEST_LOGS, uid='TestBkdyComponents', debug=g74.constants.DEBUG_MODE)
+		cls.logger = load_est.Logger(pth_logs=TEST_LOGS, uid='TestBkdyComponents', debug=load_est.constants.DEBUG_MODE)
 		cls.psse = test_module.PsseControl()
 		cls.psse.load_data_case(pth_sav=SAV_CASE_COMPLETE)
 
@@ -490,11 +490,11 @@ class TestBkdyIntegration(unittest.TestCase):
 		self.psse.load_data_case(pth_sav=SAV_CASE_COMPLETE)
 
 		# Create circuit breaker duty file
-		bkdy = g74.psse.BkdyFaultStudy(psse_control=self.psse)
+		bkdy = load_est.psse.BkdyFaultStudy(psse_control=self.psse)
 		bkdy.create_breaker_duty_file(target_path=idev_file)
 
 		# Update model to include contribution from embedded machines
-		g74_data = g74.psse.G74FaultInfeed()
+		g74_data = load_est.psse.G74FaultInfeed()
 		g74_data.identify_machine_parameters()
 		g74_data.calculate_machine_mva_values()
 
@@ -619,7 +619,7 @@ class TestPsseLoadData(unittest.TestCase):
 			Load the SAV case into PSSE for further testing
 		"""
 		# Initialise logger
-		cls.logger = g74.Logger(pth_logs=TEST_LOGS, uid='TestBkdyComponents', debug=g74.constants.DEBUG_MODE)
+		cls.logger = load_est.Logger(pth_logs=TEST_LOGS, uid='TestBkdyComponents', debug=load_est.constants.DEBUG_MODE)
 		# #cls.bkdy = test_module.BkdyFaultStudy()
 		cls.output_file = os.path.join(TESTS_DIR, 'bkdy_output{}'.format(constants.General.ext_csv))
 		cls.psse = test_module.PsseControl()

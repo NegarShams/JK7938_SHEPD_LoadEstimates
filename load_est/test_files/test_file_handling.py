@@ -15,9 +15,9 @@ import sys
 import pandas as pd
 import numpy as np
 import math
-import g74
-import g74.file_handling as test_module
-import g74.constants as constants
+import load_est
+import load_est.file_handling as test_module
+import load_est.constants as constants
 
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
 TEST_LOGS = os.path.join(TESTS_DIR, 'logs')
@@ -40,7 +40,7 @@ class TestBusbarImport(unittest.TestCase):
 			Load the SAV case into PSSE for further testing
 		"""
 		# Initialise logger
-		cls.logger = g74.Logger(pth_logs=TEST_LOGS, uid='TestBusbarData', debug=g74.constants.DEBUG_MODE)
+		cls.logger = load_est.Logger(pth_logs=TEST_LOGS, uid='TestBusbarData', debug=load_est.constants.DEBUG_MODE)
 		cls.busbars_file = os.path.join(TESTS_DIR, 'test_busbars.xlsx')
 
 	def test_import_busbars_success(self):
