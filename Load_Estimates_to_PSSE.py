@@ -421,8 +421,6 @@ if __name__ == '__main__':
 		os.mkdir(temp_folder)
 	logger = load_est.Logger(pth_logs=temp_folder, uid=uid, debug=constants.DEBUG_MODE)
 
-
-
 	# current project path
 	cur_path = os.path.dirname(__file__)
 	example_folder = r'load_est\test_files'
