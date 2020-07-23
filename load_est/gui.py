@@ -571,9 +571,9 @@ class MainGUI:
 			season=self.season_selected.get()
 		)
 
-		_ = tkMessageBox.showerror(
+		_ = tkMessageBox.showinfo(
 			title='Update Complete',
-			message='No SAV case has been selected for fault studies to be run on!'
+			message='PSSE sav case loads have been updated'
 		)
 		# Destroy GUI
 		self.master.destroy()
