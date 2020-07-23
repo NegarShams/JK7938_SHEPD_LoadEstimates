@@ -394,7 +394,7 @@ def update_loads(psse_case, station_dict, year=str(), season=str()):
 							realar1=p,  # P load MW
 							realar2=q)  # Q load MW
 					else:
-						print('Bus number not in PSSE save - skipping')
+						print('Bus number ' + str(sub_psse_bus) + ' not in PSSE sav case')
 
 
 	return None
@@ -455,10 +455,10 @@ if __name__ == '__main__':
 	# create station dictionary
 	station_dict = create_stations(network_df_dict)
 
-	if Constants.DEBUG:
-		with pd.ExcelWriter(r'C:\Users\Grant\Desktop\raw.xlsx') as writer:
-			Constants.good_data.to_excel(writer, sheet_name='Complete Load Data')
-			Constants.bad_data.to_excel(writer, sheet_name='Missing Load Data')
+	# if Constants.DEBUG:
+	# 	with pd.ExcelWriter(r'C:\Users\Grant\Desktop\raw.xlsx') as writer:
+	# 		Constants.good_data.to_excel(writer, sheet_name='Complete Load Data')
+	# 		Constants.bad_data.to_excel(writer, sheet_name='Missing Load Data')
 
 	year = r'2027 / 2028'
 	season = 'Summer'

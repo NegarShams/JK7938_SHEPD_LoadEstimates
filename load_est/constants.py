@@ -13,7 +13,7 @@ import os
 import re
 
 # Set to True to run in debug mode and therefore collect all output to window
-DEBUG_MODE = False
+DEBUG_MODE = True
 
 # TODO: Define as a constant input
 convert_to_kA = True
