@@ -90,12 +90,13 @@ class MainGUI:
 		self.year_list = constants.GUI.year_list
 		self.year_selected.set(self.year_list[0])
 
-		self.add_drop_down(
+		self.year_om = self.add_drop_down(
 			row=self.row(1),
 			col=self.col(),
 			var=self.year_selected,
 			list=self.year_list
 		)
+		self.year_om.configure(state=Tk.DISABLED)
 
 		self.row(2)
 		# add drop down list for season
@@ -103,12 +104,13 @@ class MainGUI:
 		self.season_list = constants.GUI.season_list
 		self.season_selected.set(self.season_list[0])
 
-		self.add_drop_down(
+		self.season_om = self.add_drop_down(
 			row=self.row(1),
 			col=self.col(),
 			var=self.season_selected,
 			list=self.season_list
 		)
+		self.season_om.configure(state=Tk.DISABLED)
 
 		# self.add_reload_sav(row=self.row(1), col=self.col())
 		#
@@ -128,6 +130,7 @@ class MainGUI:
 		self.row(2)
 		# Add button for calculating and saving fault currents
 		self.add_cmd_calculate_faults(row=self.row(2), col=self.col())
+		self.cmd_calculate_faults.configure(state=Tk.DISABLED)
 
 		# # Add tick box for whether it needs to be opened again on completion
 		# self.add_open_excel(row=self.row(1), col=self.col())
@@ -193,7 +196,7 @@ class MainGUI:
 		w.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E)
 
 		# return dropdown_optimisation_options
-		return
+		return w
 
 	def add_cmd_sav_case(self, row, col):
 		"""
@@ -509,6 +512,9 @@ class MainGUI:
 
 		# Update command button
 		self.cmd_select_sav_case.config(text=lbl_sav_button)
+		self.year_om.config(state=Tk.NORMAL)
+		self.season_om.config(state=Tk.NORMAL)
+		self.cmd_calculate_faults.config(state=Tk.NORMAL)
 		return None
 
 	def process(self):
@@ -579,7 +585,7 @@ class MainGUI:
 			message='PSSE sav case loads updated'
 		)
 		# Destroy GUI
-		self.master.destroy()
+		# self.master.destroy()
 		return None
 
 	def on_closing(self):

@@ -56,6 +56,7 @@ class Station:
 		# Initialise name and forecasting variables dependent on the station type (st_type)
 		self.load_forecast_dict = df.iloc[Constants.load_forecast_col_range].to_dict()
 		self.seasonal_percent_dict = df.iloc[Constants.seasonal_percent_col_range].to_dict()
+		self.seasonal_percent_dict['Maximum Demand'] = 1
 		self.psse_buses_dict = df.iloc[Constants.psse_buses_col_range].to_dict()
 
 		# Initialise substation dictionary station as empty dictionary and number of substations to zero
