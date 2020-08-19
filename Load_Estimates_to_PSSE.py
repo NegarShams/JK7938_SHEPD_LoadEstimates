@@ -25,39 +25,63 @@ class Station:
 	def __init__(self, df, st_type):
 		"""
 		Station class init function to initialise station object properties
-		:param pd.Dataframe() df: dataframe containing one station information from excel spreadsheet
+		:param pd.Dataframe() df_fr: dataframe containing one station information from excel spreadsheet
 		:param st_type: either 'BSP' or 'Primary'
 		"""
+
+		df_fr = df.iloc[0].copy()
 
 		# Initialise station type
 		self.st_type = st_type
 
 		# Initialise gsp col dictionary
-		self.gsp_col = {df.index[Constants.gsp_col_no]: df.iat[Constants.gsp_col_no]}
+		self.gsp_col = {df_fr.index[Constants.gsp_col_no]: df_fr.iat[Constants.gsp_col_no]}
 
 		# Initialise name col dictionary
-		self.name = {df.index[Constants.name_col_no]: df.iat[Constants.name_col_no]}
+		self.name = {df_fr.index[Constants.name_col_no]: df_fr.iat[Constants.name_col_no]}
 
 		# Initialise nrn col dictionary
-		self.nrn = {df.index[Constants.nrn_col_no]: df.iat[Constants.nrn_col_no]}
+		self.nrn = {df_fr.index[Constants.nrn_col_no]: df_fr.iat[Constants.nrn_col_no]}
 
 		# Initialise growth_rate col dictionary
-		self.growth_rate = {df.index[Constants.growth_rate_col]: df.iat[Constants.growth_rate_col]}
+		self.growth_rate_key = df_fr.iat[Constants.growth_rate_col]
 
-		# Initialise peak_me col dictionary
-		self.peak_mw = {df.index[Constants.peak_mw_col]: df.iat[Constants.peak_mw_col]}
+		# Initialise peak_mw col dictionary
+
+		self.peak_mw = {df_fr.index[Constants.peak_mw_col]: df_fr.iat[Constants.peak_mw_col]}
 
 		# Initialise power factor dictionary - default power factor of 1
-		self.pf = {Constants.pf_str: 1}
+		self.set_pf(1)
+		# extract gsp power factor
+		gsp_pf = df.iat[Constants.pf_cell_tuple]
+		if not np.isnan(gsp_pf):
+			self.set_pf(gsp_pf)
 
 		# Initialise name of upstream station as empty dictionary
 		self.name_up = dict()
 
 		# Initialise name and forecasting variables dependent on the station type (st_type)
-		self.load_forecast_dict = df.iloc[Constants.load_forecast_col_range].to_dict()
-		self.seasonal_percent_dict = df.iloc[Constants.seasonal_percent_col_range].to_dict()
+
+		# if st_type == Constants.gsp_type:
+		# 	# todo tidy up from hardcoded
+		# 	new_df = df.iloc[:, 10:25]
+		# 	new_df.set_index('Forecasting', drop=True, inplace=True)
+		# 	new_dict = new_df.to_dict(orient='index')
+		#
+		# 	self.diverse_dict = new_dict['Diverse']
+		# 	self.aggregate_dict = new_dict['Aggregate']
+		# 	self.aggregate_pc = \
+		# 		self.diverse_dict[self.diverse_dict.keys()[0]] / self.aggregate_dict[self.aggregate_dict.keys()[0]]
+		#
+		# self.load_forecast_dict = df_fr.iloc[Constants.load_forecast_col_range].to_dict()
+
+		self.seasonal_percent_dict = df_fr.iloc[Constants.seasonal_percent_col_range].to_dict()
 		self.seasonal_percent_dict['Maximum Demand'] = 1
-		self.psse_buses_dict = df.iloc[Constants.psse_buses_col_range].to_dict()
+
+		psse_busses_df = df.loc[0:1, df.columns[Constants.psse_buses_col_range]]
+		psse_idx = ['bus_no', 'pc']
+		psse_busses_df.index = psse_idx
+		self.psse_buses_dict = psse_busses_df.to_dict()
 
 		# Initialise substation dictionary station as empty dictionary and number of substations to zero
 		self.sub_stations_dict = dict()
@@ -85,19 +109,32 @@ class Station:
 		station_obj.name_up = self.name
 
 		st_added = False
-		if station_obj.station_check_df_row():
+		if station_obj.station_check():
 			# add the station object to the substation dictionary and update the number of substations
 			self.sub_stations_dict.update({len(self.sub_stations_dict.keys()): station_obj})
 			self.no_sub_stations = len(self.sub_stations_dict)
 			st_added = True
 
+		# todo
+		#  if station has psse buses complete add to station
+		#  		set sub_station scalable_individually to False
+		#  else: do no add to station
+		# 		set station scalable_as_gsp to False
+
 		return st_added
 
-	def station_check_df_row(self):
+	def station_check(self):
 		"""
 		Function to return a row dataframe for a station object
 		:return pd.Dataframe: row dataframe of station object
 		"""
+
+		# todo fix this tomorrow!!! psse_buses_dict shape has changed!!!
+
+		# create temp dict to have just bus numbers not percentages also
+		psse_buses_check_dict = dict()
+		for key, sub_dict in self.psse_buses_dict.iteritems():
+			psse_buses_check_dict[key] = sub_dict['bus_no']
 
 		# concatenate relevant station properties
 		df = pd.concat([
@@ -106,22 +143,21 @@ class Station:
 			pd.DataFrame([self.name]),
 			pd.DataFrame([self.peak_mw]),
 			pd.DataFrame([self.pf]),
-			pd.DataFrame([self.growth_rate]),
-			pd.DataFrame([self.load_forecast_dict]),
+			pd.DataFrame([self.growth_rate_key]),
 			pd.DataFrame([self.seasonal_percent_dict]),
-			pd.DataFrame([self.psse_buses_dict])],
+			pd.DataFrame([psse_buses_check_dict])],
 			axis=1,
 		)
 
 		check_cols = list()
 
-		# check load_forecast_dict is not null or zero
-		col_select = self.load_forecast_dict.keys()
-		col_name = 'load_forecast' + '_pass'
-		check_cols.append(col_name)
-		df.loc[:, col_name] = True
-		df.loc[df[df[col_select].le(0).any(1)].index, col_name] = False
-		df.loc[df[df[col_select].isnull().any(1)].index, col_name] = False
+		# # check load_forecast_dict is not null or zero
+		# col_select = self.load_forecast_dict.keys()
+		# col_name = 'load_forecast' + '_pass'
+		# check_cols.append(col_name)
+		# df.loc[:, col_name] = True
+		# df.loc[df[df[col_select].le(0).any(1)].index, col_name] = False
+		# df.loc[df[df[col_select].isnull().any(1)].index, col_name] = False
 
 		# check seasonal_percent_dict is not null or zero
 		col_select = self.seasonal_percent_dict.keys()
@@ -178,10 +214,11 @@ class Constants:
 	row_separation = 1
 
 	# define station type string
-	gsp_str = 'GSP'
+	gsp_type = 'GSP'
 	bsp_type = 'BSP'
 	primary_type = 'PRIMARY'
 	pf_str = 'p.f'
+	growth_rate_dict = dict()
 
 	# define the column ranges of interest
 	peak_mw_col = 7
@@ -197,18 +234,20 @@ class Constants:
 		pass
 
 
-def sse_load_xl_to_df(xl_filename, xl_ws_name):
+def sse_load_xl_to_df(xl_filename, xl_ws_name, headers=0):
 	"""
 	Function to open and perform initial formatting on spreadsheet
 	:param str() xl_filename: name of excel file 'name.xlsx'
 	:param str() xl_ws_name: name of excel worksheet
+	:param headers: where there is any data in row 0 of spreadsheet
 	:return pd.Dataframe(): dataframe of worksheet specified
 	"""
 
 	# import as dataframe
 	df = pd.read_excel(
 		io=xl_filename,
-		sheet_name=xl_ws_name
+		sheet_name=xl_ws_name,
+		header=headers
 	)
 	# remove empty rows (i.e with all NaNs)
 	df.dropna(
@@ -235,7 +274,7 @@ def extract_bsp_dfs(raw_df):
 	:return dict(): network_df_dict Dictionary of dataframes with BSP name as key
 	"""
 	# extract the GSP row index to a list
-	gsp_row_list = list(raw_df[raw_df.iloc[:, Constants.gsp_col_no].str.contains(Constants.gsp_str) == True].index)
+	gsp_row_list = list(raw_df[raw_df.iloc[:, Constants.gsp_col_no].str.contains(Constants.gsp_type) == True].index)
 	# add the last row index of df so last GSP is captured later on
 	gsp_row_list.append(len(raw_df.index) + Constants.row_separation)
 
@@ -278,35 +317,34 @@ def create_stations(df_dict):
 	for name, net in df_dict.iteritems():
 		logger.info('Processing: ' + name)
 
-		bsp_idx = net[net[Constants.gsp_str] == name].index.item()
-		bsp_df = net.iloc[bsp_idx:bsp_idx + Constants.bsp_no_rows]
+		gsp_idx = net[net[Constants.gsp_type] == name].index.item()
+		gsp_df = net.iloc[gsp_idx:gsp_idx + Constants.bsp_no_rows]
 
 		# create station object
-		bsp_station = Station(bsp_df.iloc[bsp_idx], Constants.bsp_type)
-		# extract bsp power factor
-		bsp_pf = bsp_df.iat[Constants.pf_cell_tuple]
-		if not np.isnan(bsp_pf):
-			bsp_station.set_pf(bsp_pf)
-			# check bsp_station row
-		bsb_station_pass = bsp_station.station_check_df_row()
+		gsp_station = Station(gsp_df, Constants.gsp_type)
 
-		# create new dataframe without the bsp rows
-		# todo bit hard coded
-		prim_temp_df = net.loc[net.index[4:]]
+		# check gsp_station row
+		gsp_station_pass = gsp_station.station_check()
 
-		# step through prim_temp_df in 3 rows at a time
-		for b in xrange(0, len(prim_temp_df.index), Constants.prim_no_rows):
-			prim_station = Station(prim_temp_df.iloc[b], Constants.primary_type)
-			# only add primary if passes row check
-			station_added = bsp_station.add_sub_station(prim_station)
-			if not station_added:
-				del prim_station
+		# only add GSP if passes row check
+		if gsp_station_pass:
 
-		# only add BSP if passes row check
-		if bsb_station_pass:
-			st_dict.update({len(st_dict.keys()): bsp_station})
+			# create new dataframe without the bsp rows
+			# todo bit hard coded
+			prim_temp_df = net.loc[net.index[4:]]
+
+			# step through prim_temp_df in 3 rows at a time
+			for b in xrange(0, len(prim_temp_df.index), Constants.prim_no_rows):
+				prim_station = Station(prim_temp_df.iloc[b], Constants.primary_type)
+				# only add primary if passes row check
+				station_added = gsp_station.add_sub_station(prim_station)
+				if not station_added:
+					del prim_station
+
+			# finally add station to station dictionary
+			st_dict.update({len(st_dict.keys()): gsp_station})
 		else:
-			del bsp_station
+			del gsp_station
 
 	return st_dict
 
@@ -397,6 +435,24 @@ def update_loads(psse_case, station_dict, year=str(), season=str()):
 	return None
 
 
+def set_growth_const(df):
+	"""
+	Function to set growth rate constant (dict)
+	:param pd.Dataframe() df:
+	:return:
+	"""
+	# todo way to hardcoded - can we suggest to SSE to create a better worksheet here???
+	new_df = df[[1, 3]].copy()
+	new_df = new_df.iloc[2:6]
+	new_df.columns = ['key', 'growth_rate']
+	new_df.set_index('key', drop=True, inplace=True)
+	temp_dict = new_df.to_dict()
+
+	Constants.growth_rate_dict = temp_dict['growth_rate']
+
+	return None
+
+
 if __name__ == '__main__':
 
 	"""
@@ -424,11 +480,7 @@ if __name__ == '__main__':
 	file_name = r'SHEPD 2018 LTDS Winter Peak.sav'
 	file_path = os.path.join(cur_path, example_folder, file_name)
 
-	init_psse = psse.InitialisePsspy()
-	init_psse.initialise_psse()
-
 	psse_con = load_est.psse.PsseControl()
-
 	# Produce initial log messages and decorate appropriately
 	logger.log_colouring(run_in_psse=psse_con.run_in_psse)
 
@@ -440,9 +492,13 @@ if __name__ == '__main__':
 	excel_filename = r'2019-20 SHEPD Load Estimates - v4.xlsx'
 	# worksheet to open
 	excel_ws_name = 'MASTER Based on SubstationLoad'
+	excel_ws_name_growth = 'Growth Rates'
 	file_path = os.path.join(cur_path, example_folder, excel_filename)
 	# load worksheet into dataframe
 	raw_dataframe = sse_load_xl_to_df(file_path, excel_ws_name)
+	growth_dataframe = sse_load_xl_to_df(file_path, excel_ws_name_growth, headers=None)
+
+	set_growth_const(growth_dataframe)
 
 	# extract individual BSPs
 	network_df_dict = extract_bsp_dfs(raw_dataframe)
@@ -462,6 +518,9 @@ if __name__ == '__main__':
 			worksheet1.set_tab_color('green')
 			worksheet1 = writer.sheets[sheet2]
 			worksheet1.set_tab_color('red')
+
+	init_psse = psse.InitialisePsspy()
+	init_psse.initialise_psse()
 
 	constants.GUI.year_list = sorted(station_dict[0].load_forecast_dict.keys())
 	constants.GUI.season_list = sorted(station_dict[0].seasonal_percent_dict.keys())
