@@ -29,6 +29,8 @@ class Station:
 		:param st_type: either 'BSP' or 'Primary'
 		"""
 
+		# reset index to be able to use iloc later
+		df.reset_index(drop=True, inplace=True)
 		df_fr = df.iloc[0].copy()
 
 		# Initialise station type
@@ -44,36 +46,26 @@ class Station:
 		self.nrn = {df_fr.index[Constants.nrn_col_no]: df_fr.iat[Constants.nrn_col_no]}
 
 		# Initialise growth_rate col dictionary
-		self.growth_rate_key = df_fr.iat[Constants.growth_rate_col]
+		self.growth_rate_key = {df_fr.index[Constants.growth_rate_col]: df_fr.iat[Constants.growth_rate_col]}
 
 		# Initialise peak_mw col dictionary
-
-		self.peak_mw = {df_fr.index[Constants.peak_mw_col]: df_fr.iat[Constants.peak_mw_col]}
+		self.peak_mw_val = df_fr.iat[Constants.peak_mw_col]
+		self.peak_mw_dict = {df_fr.index[Constants.peak_mw_col]: df_fr.iat[Constants.peak_mw_col]}
 
 		# Initialise power factor dictionary - default power factor of 1
 		self.set_pf(1)
-		# extract gsp power factor
-		gsp_pf = df.iat[Constants.pf_cell_tuple]
-		if not np.isnan(gsp_pf):
-			self.set_pf(gsp_pf)
+
+		if self.st_type == Constants.gsp_type:
+			# extract gsp power factor
+			gsp_pf = df.iat[Constants.pf_cell_tuple]
+			if not np.isnan(gsp_pf):
+				self.set_pf(gsp_pf)
+			self.gsp_scalable = bool
+		else:
+			self.idv_scalable = bool
 
 		# Initialise name of upstream station as empty dictionary
 		self.name_up = dict()
-
-		# Initialise name and forecasting variables dependent on the station type (st_type)
-
-		# if st_type == Constants.gsp_type:
-		# 	# todo tidy up from hardcoded
-		# 	new_df = df.iloc[:, 10:25]
-		# 	new_df.set_index('Forecasting', drop=True, inplace=True)
-		# 	new_dict = new_df.to_dict(orient='index')
-		#
-		# 	self.diverse_dict = new_dict['Diverse']
-		# 	self.aggregate_dict = new_dict['Aggregate']
-		# 	self.aggregate_pc = \
-		# 		self.diverse_dict[self.diverse_dict.keys()[0]] / self.aggregate_dict[self.aggregate_dict.keys()[0]]
-		#
-		# self.load_forecast_dict = df_fr.iloc[Constants.load_forecast_col_range].to_dict()
 
 		self.seasonal_percent_dict = df_fr.iloc[Constants.seasonal_percent_col_range].to_dict()
 		self.seasonal_percent_dict['Maximum Demand'] = 1
@@ -86,6 +78,9 @@ class Station:
 		# Initialise substation dictionary station as empty dictionary and number of substations to zero
 		self.sub_stations_dict = dict()
 		self.no_sub_stations = len(self.sub_stations_dict)
+
+		self.load_forecast_dict = dict()
+		self.load_forecast_diverse_dict = dict()
 
 	def set_pf(self, pf):
 		"""
@@ -108,28 +103,20 @@ class Station:
 		# set the name of upstream station as the upstream station name
 		station_obj.name_up = self.name
 
-		st_added = False
-		if station_obj.station_check():
-			# add the station object to the substation dictionary and update the number of substations
-			self.sub_stations_dict.update({len(self.sub_stations_dict.keys()): station_obj})
-			self.no_sub_stations = len(self.sub_stations_dict)
-			st_added = True
+		# add the station object to the substation dictionary and update the number of substations
+		self.sub_stations_dict.update({len(self.sub_stations_dict.keys()): station_obj})
+		self.no_sub_stations = len(self.sub_stations_dict)
 
-		# todo
-		#  if station has psse buses complete add to station
-		#  		set sub_station scalable_individually to False
-		#  else: do no add to station
-		# 		set station scalable_as_gsp to False
+		return
 
-		return st_added
+	def calc_forecast_loads(self):
 
-	def station_check(self):
-		"""
-		Function to return a row dataframe for a station object
-		:return pd.Dataframe: row dataframe of station object
-		"""
 
-		# todo fix this tomorrow!!! psse_buses_dict shape has changed!!!
+
+
+		return
+
+	def gsp_scalable_check(self):
 
 		# create temp dict to have just bus numbers not percentages also
 		psse_buses_check_dict = dict()
@@ -141,7 +128,73 @@ class Station:
 			pd.DataFrame([self.gsp_col]),
 			pd.DataFrame([self.nrn]),
 			pd.DataFrame([self.name]),
-			pd.DataFrame([self.peak_mw]),
+			pd.DataFrame([self.peak_mw_dict]),
+			pd.DataFrame([self.pf]),
+			pd.DataFrame([self.growth_rate_key]),
+			pd.DataFrame([psse_buses_check_dict])],
+			axis=1,
+		)
+
+		check_cols = list()
+
+		# check that MW Peak is a number greater than zero
+		col_select = self.peak_mw_dict.keys()
+		col_name = 'peak_mw' + '_pass'
+		check_cols.append(col_name)
+		df.loc[:, col_name] = True
+		df.loc[df[df[col_select].le(0).any(1)].index, col_name] = False
+		df.loc[df[df[col_select].isnull().any(1)].index, col_name] = False
+
+		# todo check if primary whether valid key for growth.
+
+		# check load_forecast_dict is not null or zero
+		col_select = self.growth_rate_key.keys()
+		col_name = 'growth_rate_key' + '_pass'
+		check_cols.append(col_name)
+
+		df.loc[:, col_name] = True
+
+		if self.st_type == Constants.primary_type:
+			growth_str_list = Constants.growth_rate_dict.keys()
+
+			if not df.loc[0, col_select].item() in growth_str_list:
+				df.loc[:, col_name] = False
+
+		# check all psse_buses_dict are not null
+		col_select = psse_buses_check_dict.keys()
+		col_name = 'psse_buses' + '_pass'
+		check_cols.append(col_name)
+		df.loc[:, col_name] = True
+		df.loc[df[df[col_select].isnull().all(1)].index, col_name] = False
+
+		# final check
+		col_select = check_cols
+		col_name = 'Station_data_pass'
+		df.loc[:, col_name] = False
+		df.loc[df[df[col_select].all(1)].index, col_name] = True
+
+		# output
+		good_data = df['Station_data_pass'].item()
+
+		return good_data
+
+	def station_check(self):
+		"""
+		Function to return a row dataframe for a station object
+		:return pd.Dataframe: row dataframe of station object
+		"""
+
+		# create temp dict to have just bus numbers not percentages also
+		psse_buses_check_dict = dict()
+		for key, sub_dict in self.psse_buses_dict.iteritems():
+			psse_buses_check_dict[key] = sub_dict['bus_no']
+
+		# concatenate relevant station properties
+		df = pd.concat([
+			pd.DataFrame([self.gsp_col]),
+			pd.DataFrame([self.nrn]),
+			pd.DataFrame([self.name]),
+			pd.DataFrame([self.peak_mw_dict]),
 			pd.DataFrame([self.pf]),
 			pd.DataFrame([self.growth_rate_key]),
 			pd.DataFrame([self.seasonal_percent_dict]),
@@ -151,13 +204,28 @@ class Station:
 
 		check_cols = list()
 
-		# # check load_forecast_dict is not null or zero
-		# col_select = self.load_forecast_dict.keys()
-		# col_name = 'load_forecast' + '_pass'
-		# check_cols.append(col_name)
-		# df.loc[:, col_name] = True
-		# df.loc[df[df[col_select].le(0).any(1)].index, col_name] = False
-		# df.loc[df[df[col_select].isnull().any(1)].index, col_name] = False
+		# check that MW Peak is a number greater than zero
+		col_select = self.peak_mw_dict.keys()
+		col_name = 'peak_mw' + '_pass'
+		check_cols.append(col_name)
+		df.loc[:, col_name] = True
+		df.loc[df[df[col_select].le(0).any(1)].index, col_name] = False
+		df.loc[df[df[col_select].isnull().any(1)].index, col_name] = False
+
+		# todo check if primary whether valid key for growth.
+
+		# check load_forecast_dict is not null or zero
+		col_select = self.growth_rate_key.keys()
+		col_name = 'growth_rate_key' + '_pass'
+		check_cols.append(col_name)
+
+		df.loc[:, col_name] = True
+
+		if self.st_type == Constants.primary_type:
+			growth_str_list = Constants.growth_rate_dict.keys()
+
+			if not df.loc[0, col_select].item() in growth_str_list:
+				df.loc[:, col_name] = False
 
 		# check seasonal_percent_dict is not null or zero
 		col_select = self.seasonal_percent_dict.keys()
@@ -168,7 +236,7 @@ class Station:
 		df.loc[df[df[col_select].isnull().any(1)].index, col_name] = False
 
 		# check all psse_buses_dict are not null
-		col_select = self.psse_buses_dict.keys()
+		col_select = psse_buses_check_dict.keys()
 		col_name = 'psse_buses' + '_pass'
 		check_cols.append(col_name)
 		df.loc[:, col_name] = True
@@ -176,12 +244,12 @@ class Station:
 
 		# final check
 		col_select = check_cols
-		col_name = 'Load data_pass'
+		col_name = 'Station_data_pass'
 		df.loc[:, col_name] = False
 		df.loc[df[df[col_select].all(1)].index, col_name] = True
 
 		# output
-		good_data = df['Load data_pass'].item()
+		good_data = df['Station_data_pass'].item()
 
 		# if in debug mode add to dataframes
 		if Constants.DEBUG:
@@ -324,10 +392,8 @@ def create_stations(df_dict):
 		gsp_station = Station(gsp_df, Constants.gsp_type)
 
 		# check gsp_station row
-		gsp_station_pass = gsp_station.station_check()
-
 		# only add GSP if passes row check
-		if gsp_station_pass:
+		if gsp_station.station_check():
 
 			# create new dataframe without the bsp rows
 			# todo bit hard coded
@@ -335,11 +401,25 @@ def create_stations(df_dict):
 
 			# step through prim_temp_df in 3 rows at a time
 			for b in xrange(0, len(prim_temp_df.index), Constants.prim_no_rows):
-				prim_station = Station(prim_temp_df.iloc[b], Constants.primary_type)
-				# only add primary if passes row check
-				station_added = gsp_station.add_sub_station(prim_station)
-				if not station_added:
+				prim_df = prim_temp_df.iloc[b: b + Constants.prim_no_rows]
+				prim_station = Station(prim_df, Constants.primary_type)
+				# if primary passes station check add to GSP
+				if prim_station.station_check():
+					gsp_station.add_sub_station(prim_station)
+					gsp_station.gsp_scalable = True
+					prim_station.idv_scalable = True
+				# if primary passes gsp scalable check add to GSP
+				elif prim_station.gsp_scalable_check():
+					gsp_station.add_sub_station(prim_station)
+					gsp_station.gsp_scalable = True
+					prim_station.idv_scalable = False
+				# else do not add the primary station to the gsp
+				else:
+					gsp_station.gsp_scalable = False
 					del prim_station
+
+			# calculate forecast loads
+			gsp_station.calc_forecast_loads()
 
 			# finally add station to station dictionary
 			st_dict.update({len(st_dict.keys()): gsp_station})
