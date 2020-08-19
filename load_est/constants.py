@@ -11,6 +11,7 @@
 
 import os
 import re
+import datetime
 
 # Set to True to run in debug mode and therefore collect all output to window
 DEBUG_MODE = False
@@ -46,8 +47,8 @@ class GUI:
 	"""
 		Constants for the user interface
 	"""
-	year_list = list()
-	season_list = list()
+	year_list = [datetime.datetime.now().year]
+	season_list = ['Maximum Demand']
 	station_dict = dict()
 
 	gui_name = 'PSC Load Estimates Tool'

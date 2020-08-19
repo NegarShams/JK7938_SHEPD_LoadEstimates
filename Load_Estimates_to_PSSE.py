@@ -7,6 +7,7 @@ import collections
 import time
 import numpy as np
 import math
+import dill
 import pandas as pd
 pd.options.display.width = 0
 
@@ -20,8 +21,6 @@ import psspy
 
 class Station:
 
-	# todo write function to change PSSE load
-
 	def __init__(self, df, st_type):
 		"""
 		Station class init function to initialise station object properties
@@ -31,21 +30,25 @@ class Station:
 
 		# reset index to be able to use iloc later
 		df.reset_index(drop=True, inplace=True)
+		self.df = df.copy()
 		df_fr = df.iloc[0].copy()
 
 		# Initialise station type
 		self.st_type = st_type
 
 		# Initialise gsp col dictionary
+		self.gsp = df_fr.iat[Constants.gsp_col_no]
 		self.gsp_col = {df_fr.index[Constants.gsp_col_no]: df_fr.iat[Constants.gsp_col_no]}
 
 		# Initialise name col dictionary
+		self.name_val = df_fr.iat[Constants.name_col_no]
 		self.name = {df_fr.index[Constants.name_col_no]: df_fr.iat[Constants.name_col_no]}
 
 		# Initialise nrn col dictionary
 		self.nrn = {df_fr.index[Constants.nrn_col_no]: df_fr.iat[Constants.nrn_col_no]}
 
 		# Initialise growth_rate col dictionary
+		self.growth_rate_key_val = df_fr.iat[Constants.growth_rate_col]
 		self.growth_rate_key = {df_fr.index[Constants.growth_rate_col]: df_fr.iat[Constants.growth_rate_col]}
 
 		# Initialise peak_mw col dictionary
@@ -63,6 +66,7 @@ class Station:
 			self.gsp_scalable = bool
 		else:
 			self.idv_scalable = bool
+			self.gsp_percentage = float
 
 		# Initialise name of upstream station as empty dictionary
 		self.name_up = dict()
@@ -80,7 +84,7 @@ class Station:
 		self.no_sub_stations = len(self.sub_stations_dict)
 
 		self.load_forecast_dict = dict()
-		self.load_forecast_diverse_dict = dict()
+		self.load_forecast_diverse_fac = float
 
 	def set_pf(self, pf):
 		"""
@@ -111,8 +115,30 @@ class Station:
 
 	def calc_forecast_loads(self):
 
+		year_list = self.df.columns[Constants.load_forecast_col_range].to_list()
+		year_list.sort()
 
+		peak_mw_df = pd.DataFrame(columns=year_list)
 
+		for key, prim_stat in self.sub_stations_dict.iteritems():
+			for counter, yr in enumerate(year_list):
+				prim_stat.load_forecast_dict[yr] = \
+					prim_stat.peak_mw_val * Constants.growth_rate_dict[prim_stat.growth_rate_key_val] ** counter
+
+			temp_df = pd.DataFrame([prim_stat.load_forecast_dict])
+			temp_df.index = [prim_stat.name_val]
+
+			peak_mw_df = peak_mw_df.append(temp_df)
+
+		peak_mw_df.loc['Column_Total'] = peak_mw_df.sum(numeric_only=True, axis=0)
+
+		self.load_forecast_dict = peak_mw_df.loc['Column_Total'].to_dict()
+		self.load_forecast_diverse_fac = self.peak_mw_val / peak_mw_df.loc['Column_Total', year_list[0]].item()
+
+		for key, prim_stat in self.sub_stations_dict.iteritems():
+
+			prim_stat.gsp_percentage = peak_mw_df.loc[prim_stat.name_val, year_list[0]].item() / \
+				peak_mw_df.loc['Column_Total', year_list[0]].item()
 
 		return
 
@@ -212,13 +238,10 @@ class Station:
 		df.loc[df[df[col_select].le(0).any(1)].index, col_name] = False
 		df.loc[df[df[col_select].isnull().any(1)].index, col_name] = False
 
-		# todo check if primary whether valid key for growth.
-
-		# check load_forecast_dict is not null or zero
+		# check growth_rate_key is in the growth rate dict
 		col_select = self.growth_rate_key.keys()
 		col_name = 'growth_rate_key' + '_pass'
 		check_cols.append(col_name)
-
 		df.loc[:, col_name] = True
 
 		if self.st_type == Constants.primary_type:
@@ -227,12 +250,13 @@ class Station:
 			if not df.loc[0, col_select].item() in growth_str_list:
 				df.loc[:, col_name] = False
 
-		# check seasonal_percent_dict is not null or zero
+		# check seasonal_percent_dict is not null, zero or greater than 1
 		col_select = self.seasonal_percent_dict.keys()
 		col_name = 'seasonal_percent' + '_pass'
 		check_cols.append(col_name)
 		df.loc[:, col_name] = True
 		df.loc[df[df[col_select].le(0).any(1)].index, col_name] = False
+		df.loc[df[df[col_select].gt(1).any(1)].index, col_name] = False
 		df.loc[df[df[col_select].isnull().any(1)].index, col_name] = False
 
 		# check all psse_buses_dict are not null
@@ -264,6 +288,8 @@ class Station:
 class Constants:
 
 	DEBUG = 0
+
+	dill_file_name = 'station_dict.pkl'
 
 	# define good data and bad data dataframes
 	good_data = pd.DataFrame()
@@ -302,7 +328,7 @@ class Constants:
 		pass
 
 
-def sse_load_xl_to_df(xl_filename, xl_ws_name, headers=0):
+def sse_load_xl_to_df(xl_filename, xl_ws_name, headers=True):
 	"""
 	Function to open and perform initial formatting on spreadsheet
 	:param str() xl_filename: name of excel file 'name.xlsx'
@@ -311,11 +337,16 @@ def sse_load_xl_to_df(xl_filename, xl_ws_name, headers=0):
 	:return pd.Dataframe(): dataframe of worksheet specified
 	"""
 
+	if headers:
+		h = 0
+	else:
+		h = None
+
 	# import as dataframe
 	df = pd.read_excel(
 		io=xl_filename,
 		sheet_name=xl_ws_name,
-		header=headers
+		header=h
 	)
 	# remove empty rows (i.e with all NaNs)
 	df.dropna(
@@ -426,6 +457,9 @@ def create_stations(df_dict):
 		else:
 			del gsp_station
 
+	for num, gsp in st_dict.iteritems():
+		print (gsp.gsp_col.values())
+
 	return st_dict
 
 
@@ -533,41 +567,11 @@ def set_growth_const(df):
 	return None
 
 
-if __name__ == '__main__':
+def process_load_estimates_xl():
 
-	"""
-		This is the main block of code that will be run if this script is run directly
-	"""
-	Constants.DEBUG = 1
-
-	# Time stamp for performance checking
-	t0 = time.time()
-
-	# Produce unique identifier for logger
-	uid = 'BKDY_{}'.format(time.strftime('%Y%m%d_%H%M%S'))
-
-	# Check temp folder exists to store log files in and if not create appropriate folders
-	script_path = os.path.realpath(__file__)
-	script_folder = os.path.dirname(script_path)
-	temp_folder = os.path.join(script_folder, 'temp')
-	if not os.path.exists(temp_folder):
-		os.mkdir(temp_folder)
-	logger = load_est.Logger(pth_logs=temp_folder, uid=uid, debug=constants.DEBUG_MODE)
-
-	# current project path
 	cur_path = os.path.dirname(__file__)
 	example_folder = r'load_est\test_files'
-	file_name = r'SHEPD 2018 LTDS Winter Peak.sav'
-	file_path = os.path.join(cur_path, example_folder, file_name)
 
-	psse_con = load_est.psse.PsseControl()
-	# Produce initial log messages and decorate appropriately
-	logger.log_colouring(run_in_psse=psse_con.run_in_psse)
-
-	# # Run main study
-	# logger.info('Study started')
-
-	# ------------------------------------------------------------------------------------------------------------------
 	# workbook to open
 	excel_filename = r'2019-20 SHEPD Load Estimates - v4.xlsx'
 	# worksheet to open
@@ -576,7 +580,7 @@ if __name__ == '__main__':
 	file_path = os.path.join(cur_path, example_folder, excel_filename)
 	# load worksheet into dataframe
 	raw_dataframe = sse_load_xl_to_df(file_path, excel_ws_name)
-	growth_dataframe = sse_load_xl_to_df(file_path, excel_ws_name_growth, headers=None)
+	growth_dataframe = sse_load_xl_to_df(file_path, excel_ws_name_growth, headers=False)
 
 	set_growth_const(growth_dataframe)
 
@@ -599,12 +603,44 @@ if __name__ == '__main__':
 			worksheet1 = writer.sheets[sheet2]
 			worksheet1.set_tab_color('red')
 
+
+
+	# todo use a constant to save filename
+
+	with open(os.path.join(cur_path, example_folder, "dict.pkl"), 'wb') as f:
+		dill.dump(station_dict, f)
+
+
+if __name__ == '__main__':
+
+	"""
+		This is the main block of code that will be run if this script is run directly
+	"""
+	Constants.DEBUG = 1
+
+	# Time stamp for performance checking
+	t0 = time.time()
+
+	# Produce unique identifier for logger
+	uid = 'BKDY_{}'.format(time.strftime('%Y%m%d_%H%M%S'))
+
+	# Check temp folder exists to store log files in and if not create appropriate folders
+	script_path = os.path.realpath(__file__)
+	script_folder = os.path.dirname(script_path)
+	temp_folder = os.path.join(script_folder, 'temp')
+	if not os.path.exists(temp_folder):
+		os.mkdir(temp_folder)
+	logger = load_est.Logger(pth_logs=temp_folder, uid=uid, debug=constants.DEBUG_MODE)
+
+	# Produce initial log messages and decorate appropriately
+	psse_con = load_est.psse.PsseControl()
+	logger.log_colouring(run_in_psse=psse_con.run_in_psse)
+
 	init_psse = psse.InitialisePsspy()
 	init_psse.initialise_psse()
 
-	constants.GUI.year_list = sorted(station_dict[0].load_forecast_dict.keys())
-	constants.GUI.season_list = sorted(station_dict[0].seasonal_percent_dict.keys())
-	constants.GUI.station_dict = station_dict
-
 	gui = load_est.gui.MainGUI()
+#
+
+
 

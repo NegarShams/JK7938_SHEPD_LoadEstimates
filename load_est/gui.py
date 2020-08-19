@@ -30,7 +30,7 @@ class MainGUI:
 		Main class to produce the GUI
 		Allows the user to select the busbars and methodology to be applied in the fault current calculations
 	"""
-	def __init__(self, title=constants.GUI.gui_name, sav_case=str(), busbars=list()):
+	def __init__(self, title=constants.GUI.gui_name, station_dict=dict()):
 		"""
 			Initialise GUI
 		:param str title: (optional) - Title to be used for main window
@@ -55,8 +55,6 @@ class MainGUI:
 		self._row = 0
 		self._col = 0
 
-		# Will be populated with a list of busbars to be faulted
-		self.selected_busbars = busbars
 		# Target file that results will be exported to
 		self.target_file = str()
 		self.results_pth = os.path.dirname(os.path.realpath(__file__))
@@ -79,10 +77,24 @@ class MainGUI:
 		self.psc_info = Tk.Label()
 
 		# SAV case for faults to be run on
-		self.sav_case = sav_case
+		self.sav_case = str()
+
+		# Determine label for button based on the SAV case being loaded
+		if self.sav_case:
+			lbl_sav_button = 'SAV case = {}'.format(os.path.basename(self.sav_case))
+		else:
+			lbl_sav_button = 'Select SAV Case for Fault Study'
 
 		# Add button for selecting SAV case to run
-		self.add_cmd_sav_case(row=self.row(1), col=self.col())
+		# self.add_cmd_sav_case(row=self.row(1), col=self.col())
+
+		self.cmd_select_sav_case = self.add_cmd_button(
+			label=lbl_sav_button, cmd=self.select_sav_case,  row=self.row(1), col=self.col())
+
+		if bool(station_dict):
+			constants.GUI.year_list = sorted(station_dict[0].load_forecast_dict.keys())
+			constants.GUI.season_list = sorted(station_dict[0].seasonal_percent_dict.keys())
+			# constants.GUI.station_dict = station_dict
 
 		self.row(2)
 		# add drop down list for year
@@ -112,21 +124,6 @@ class MainGUI:
 		)
 		self.season_om.configure(state=Tk.DISABLED)
 
-		# self.add_reload_sav(row=self.row(1), col=self.col())
-		#
-		# _ = Tk.Label(self.master, text='Select Fault Studies to Include').grid(
-		# 	row=self.row(1), column=self.col(), sticky=Tk.W + Tk.E
-		# )
-		# # Add tick boxes for fault types to include
-		# self.add_fault_types(col=self.col())
-		#
-		# # Add button for importing / viewing busbars
-		# self.add_cmd_import_busbars(row=self.row(1), col=self.col())
-		# self.add_cmd_edit_busbars(row=self.row(), col=self.col()+1)
-		#
-		# # Add a text entry box for fault times to be added as a comma separated list
-		# self.add_entry_fault_times(row=self.row(1), col=self.col())
-
 		self.row(2)
 		# Add button for calculating and saving fault currents
 		self.add_cmd_calculate_faults(row=self.row(2), col=self.col())
@@ -138,7 +135,7 @@ class MainGUI:
 		# Add help button which loads work instructions
 		self.add_hyp_help_instructions(row=self.row(1), col=self.col())
 
-		# Add seperator
+		# Add separator
 		self.add_sep(row=self.row(1), col_span=2)
 
 		# Add PSC logo in Windows Manager
@@ -222,6 +219,24 @@ class MainGUI:
 		# 	'Select the SAV case for which fault studies should be run.'
 		# ))
 		return None
+
+	def add_cmd_button(self, label, cmd, row, col):
+		"""
+			Function just adds the command button to the GUI which is used for selecting the SAV case
+		:param int row: Row number to use
+		:param int col: Column number to use
+		:return None:
+		"""
+		# Create button and assign to Grid
+		cmd_btn = Tk.Button(self.master, text=label, command=cmd)
+		# self.cmd_select_sav_case.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E)
+		cmd_btn.grid(row=row, column=col, columnspan=2)
+		# CreateToolTip(widget=self.cmd_select_sav_case, text=(
+		# 	'Select the SAV case for which fault studies should be run.'
+		# ))
+		return cmd_btn
+
+
 
 	def add_cmd_import_busbars(self, row, col):
 		"""
