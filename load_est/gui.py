@@ -143,6 +143,12 @@ class MainGUI:
 		)
 		self.cmd_scale_load_gen.configure(state=Tk.DISABLED)
 
+		self.sav_new_psse_case_boolvar = Tk.BooleanVar()
+		self.sav_new_psse_case_button = ttk.Checkbutton(
+			self.master, text='Save new case after scaling', variable=self.sav_new_psse_case_boolvar
+		)
+		self.sav_new_psse_case_button.grid(row=self.row(1), column=3, columnspan=2, sticky=Tk.W + Tk.E, padx=5, pady=5)
+
 		# # Add tick box for whether it needs to be opened again on completion
 		# self.add_open_excel(row=self.row(1), col=self.col())
 
@@ -167,6 +173,10 @@ class MainGUI:
 		self.gen_scrollbar = ttk.Scrollbar()
 		# gen selector zone constants
 		self.gen_boolvar_zon = dict()
+
+		self.var_gen_percent = Tk.DoubleVar()
+		# Add entry box
+		self.entry_gen_percent = Tk.Entry()
 
 		# create load options labelframe
 		self.create_gen_options()
@@ -270,6 +280,8 @@ class MainGUI:
 			self.row(1)
 
 		self.enable_radio_buttons(self.gen_radio_btn_list, enable=False)
+
+		self.add_entry_gen_percent(row=self.row(), col=0)
 
 		return None
 
@@ -376,20 +388,17 @@ class MainGUI:
 
 	def gen_radio_button_click(self):
 
-		if self.load_radio_opt_sel.get() == 0:
-			self.year_om.config(state=Tk.DISABLED)
-			self.season_om.config(state=Tk.DISABLED)
-			self.remove_load_bottom_selector()
-		if self.load_radio_opt_sel.get() == 1:
-			self.year_om.config(state=Tk.NORMAL)
-			self.season_om.config(state=Tk.NORMAL)
-			self.remove_load_bottom_selector()
-		elif self.load_radio_opt_sel.get() > 1 and self.load_radio_opt_sel.get() != self.load_prev_radio_opt:
-			self.year_om.config(state=Tk.NORMAL)
-			self.season_om.config(state=Tk.NORMAL)
-			self.create_load_select_frame()
+		if self.gen_radio_opt_sel.get() == 0:
+			self.entry_gen_percent.config(state=Tk.DISABLED)
+			self.remove_gen_bottom_selector()
+		if self.gen_radio_opt_sel.get() == 1:
+			self.entry_gen_percent.config(state=Tk.NORMAL)
+			self.remove_gen_bottom_selector()
+		elif self.gen_radio_opt_sel.get() > 1 and self.gen_radio_opt_sel.get() != self.gen_prev_radio_opt:
+			self.entry_gen_percent.config(state=Tk.NORMAL)
+			self.create_gen_select_frame()
 
-		self.load_prev_radio_opt = self.load_radio_opt_sel.get()
+		self.gen_prev_radio_opt = self.gen_radio_opt_sel.get()
 		return None
 
 	def enable_radio_buttons(self, radio_btn_list, enable=True):
@@ -446,7 +455,7 @@ class MainGUI:
 			self.load_canvas.create_window((0, 0), window=self.load_entry_frame, anchor='nw')
 
 			# Bind the action of the scrollbar with the movement of the canvas
-			self.load_entry_frame.bind("<Configure>", self.canvas_scroll_function)
+			self.load_entry_frame.bind("<Configure>", self.load_canvas_scroll_function)
 			self.move_widgets_down()
 
 		else:
@@ -489,9 +498,79 @@ class MainGUI:
 
 		return None
 
-	def canvas_scroll_function(self, _event):
+	def create_gen_select_frame(self):
+
+		if self.gen_radio_opt_sel.get() == 2:
+			lbl = 'Select Zone(s):'
+
+		if self.gen_select_frame is None:
+			master_col, master_rows,  = self.master.grid_size()
+			self._row = master_rows
+			self._col = 0
+			# Label for what is included in entry
+			self.gen_side_lbl = Tk.Label(master=self.gen_labelframe, text=lbl)
+			self.gen_side_lbl.grid(row=self.row(1), column=self.col())
+
+			# Produce a frame which will house the zones check buttons and place them in the window
+			# self.zon_frame = ttk.Frame(self.master, relief=Tk.GROOVE, style=self.styles.frame_outer)
+			self.gen_select_frame = ttk.Frame(self.gen_labelframe, relief=Tk.GROOVE)
+			# zon_frame = ttk.Frame(self.master, relief=Tk.GROOVE, bd=1, style=self.styles.frame)
+			self.gen_select_frame.grid(row=self.row(1), column=self.col(), columnspan=4)
+
+			# Create a canvas into which the zon_frame will be housed so that scroll bars can be added for the
+			# network zone list
+			self.gen_canvas = Tk.Canvas(self.gen_select_frame)
+
+			# Add the canvas into a new frame
+			# self.entry_frame = ttk.Frame(self.canvas, style=self.styles.frame)
+			self.gen_entry_frame = ttk.Frame(self.gen_canvas)
+
+			# Create scroll bars which will control the zon_frame within the canvas and configure the controls
+			# self.zon_scrollbar = ttk.Scrollbar(
+			# 	self.zon_frame, orient="vertical", command=self.canvas.yview, style=self.styles.scrollbar
+			# )
+			self.gen_scrollbar = ttk.Scrollbar(
+				self.gen_select_frame, orient="vertical", command=self.gen_canvas.yview
+			)
+			self.gen_canvas.configure(yscrollcommand=self.gen_scrollbar.set)
+
+			# Locate the scroll bars on the right hand side of the canvas and locate canvas within newly created frame
+			self.gen_scrollbar.pack(side="right", fill="y")
+			self.gen_canvas.pack(side="left")
+			self.gen_canvas.create_window((0, 0), window=self.gen_entry_frame, anchor='nw')
+
+			# Bind the action of the scrollbar with the movement of the canvas
+			self.gen_entry_frame.bind("<Configure>", self.gen_canvas_scroll_function)
+			self.move_widgets_down()
+
+		else:
+			if len(self.gen_entry_frame.winfo_children()) > 0:
+				for widget in self.gen_entry_frame.winfo_children():
+					widget.destroy()
+
+		if self.gen_radio_opt_sel.get() == 2:
+			lbl = 'Select Zone(s):'
+			self.gen_side_lbl.config(text=lbl)
+			# 'Select Zone(s):'
+			for zone in self.zones:
+				self.gen_boolvar_zon[zone] = Tk.BooleanVar()
+				self.gen_boolvar_zon[zone].set(0)
+
+			counter = 0
+			for zone in self.zones:
+				lbl = "{}".format(self.zones[zone])
+				check_button = ttk.Checkbutton(
+					self.gen_entry_frame, text=lbl, variable=self.gen_boolvar_zon[zone],
+				)
+				check_button.grid(row=counter, column=0, sticky="w")
+				counter += 1
+			self.gen_canvas.yview_moveto(0)
+
+		return None
+
+	def load_canvas_scroll_function(self, _event):
 		"""
-			Function to control what happens when the frame is scrolled
+			Function to control what happens when the load frame is scrolled
 		:return None:
 		"""
 
@@ -499,6 +578,18 @@ class MainGUI:
 		# 	scrollregion=self.canvas.bbox("all"), width=230, height=200, background=self.styles.bg_color_frame)
 		self.load_canvas.configure(
 			scrollregion=self.load_canvas.bbox("all"), width=230, height=200)
+		return None
+
+	def gen_canvas_scroll_function(self, _event):
+		"""
+			Function to control what happens when the gen frame is scrolled
+		:return None:
+		"""
+
+		# self.canvas.configure(
+		# 	scrollregion=self.canvas.bbox("all"), width=230, height=200, background=self.styles.bg_color_frame)
+		self.gen_canvas.configure(
+			scrollregion=self.gen_canvas.bbox("all"), width=230, height=200)
 		return None
 
 	def remove_load_bottom_selector(self):
@@ -509,15 +600,24 @@ class MainGUI:
 			self.load_side_lbl = None
 			self.load_select_frame = None
 
+	def remove_gen_bottom_selector(self):
+
+		if self.gen_select_frame is not None:
+			self.gen_side_lbl.grid_remove()
+			self.gen_select_frame.grid_remove()
+			self.gen_side_lbl = None
+			self.gen_select_frame = None
+
 	def move_widgets_down(self):
 
 		master_col, master_rows, = self.master.grid_size()
 		self.cmd_scale_load_gen.grid(row=master_rows + 1, column=3)
+		self.sav_new_psse_case_button(row=master_rows + 2, column=3)
 		self.psc_info.grid(row=master_rows+2, column=0)
 
 		return None
 
-	def add_entry_fault_times(self, row, col):
+	def add_entry_gen_percent(self, row, col):
 		"""
 			Function to add the text entry row for inserting fault times
 		:param int row:  Row number to use
@@ -525,17 +625,18 @@ class MainGUI:
 		:return None:
 		"""
 		# Label for what is included in entry
-		lbl = Tk.Label(master=self.master, text='Desired Fault Times\n(in seconds separated by commas)')
-		lbl.grid(row=row, column=col, rowspan=2, sticky=Tk.W + Tk.N + Tk.S)
+		lbl = Tk.Label(master=self.gen_labelframe, text='% of Generator Maximum Output:')
+		lbl.grid(row=row, column=col, rowspan=1, sticky=Tk.W, padx=10)
 		# Set initial value for variable
-		self.var_fault_times_list.set(constants.GUI.default_fault_times)
+		self.var_gen_percent.set(100.0)
 		# Add entry box
-		self.entry_fault_times = Tk.Entry(master=self.master, textvariable=self.var_fault_times_list)
-		self.entry_fault_times.grid(row=row, column=col + 1, sticky=Tk.W + Tk.E, rowspan=2)
-		CreateToolTip(widget=self.entry_fault_times, text=(
-			'Enter the durations after the fault the current should be calculated for.\n'
-			'Multiple values can be input in a list.'
-		))
+		self.entry_gen_percent = Tk.Entry(master=self.gen_labelframe, textvariable=self.var_gen_percent)
+		self.entry_gen_percent.grid(row=row+1, column=col, sticky=Tk.W, padx=20)
+		self.entry_gen_percent.config(state=Tk.DISABLED)
+		# CreateToolTip(widget=self.entry_fault_times, text=(
+		# 	'Enter the durations after the fault the current should be calculated for.\n'
+		# 	'Multiple values can be input in a list.'
+		# ))
 		return None
 
 	def add_reload_sav(self, row, col):
@@ -557,39 +658,6 @@ class MainGUI:
 			'study finished which may be useful for debugging purposes.'
 		))
 		return None
-
-	def add_fault_types(self, col):
-		"""
-			Function to add a tick box to select the available fault types
-		:param int col:  Column number to use
-		:return None:
-		"""
-		labels = (
-			'3 Phase fault (BKDY method)',
-			'3 Phase fault (IEC method)',
-			'LG Phase fault (IEC method)'
-		)
-		boolean_vars = (self.bo_fault_3_ph_bkdy, self.bo_fault_3_ph_iec, self.bo_fault_1_ph_iec)
-
-		# TODO: Implement additional fault current calculations
-		# The following values are used to enable and disable the buttons and will be removed once
-		# the fault current implementations for IEC has been developed.
-		default_values = (1, 0, 0)
-		enabled = (True, False, False)
-		i = 0
-		for i, lbl in enumerate(labels):
-			# Defaults assuming that all faults will be calculated
-			boolean_vars[i].set(default_values[i])
-			# Add check button for this fault
-			check_button = Tk.Checkbutton(
-				self.master, text=lbl, variable=boolean_vars[i]
-			)
-			check_button.grid(row=self.row(1), column=col, sticky=Tk.W)
-			# TODO: Temporary to disable non-necessary faults
-			# Disable faults that are not important
-			if not enabled[i]:
-				check_button.config(state='disabled')
-		return i
 
 	def add_open_excel(self, row, col):
 		"""
@@ -695,42 +763,6 @@ class MainGUI:
 		sep.grid(row=row, sticky=Tk.W + Tk.E, columnspan=col_span, pady=5)
 		return None
 
-	def import_busbars_list(self):
-		"""
-			Function to import a list of busbars based on the selected file
-		:return: None
-		"""
-		# Ask user to select file(s) or folders based on <.bo_files>
-		file_path = tkFileDialog.askopenfilename(
-			initialdir=self.results_pth,
-			filetypes=constants.General.file_types,
-			title='Select spreadsheet containing list of busbars'
-		)
-
-		# Import busbar list from file assuming it is first column and append to existing list
-		busbars = load_est.file_handling.import_busbars_list(path=file_path)
-		self.selected_busbars.extend(busbars)
-
-		# Update results path to include this name
-		self.results_pth = os.path.dirname(file_path)
-
-		return None
-
-	def edit_busbars_list(self):
-		"""
-			Function to popup a list of busbars that are to be faulted so that new / different busbars can be
-			added or removed from the list
-		:return None:
-		"""
-		# TODO: Write a pop-up window that will allow busbars list to be edited / manually populated
-		# Create new window to house the busbars list and ensure it pops up on top of everything else
-		busbars_window = Tk.Toplevel(self.master)
-		busbars_window.attributes('-topmost', 'true')
-		bus_data = BusbarsWindow(master=busbars_window, busbars=self.selected_busbars)
-		# Add entry boxes and populate busbars
-		bus_data.add_entry_boxes()
-		bus_data.populate_busbars()
-
 	def select_sav_case(self):
 		"""
 			Function to allow the user to select the SAV case to run
@@ -752,6 +784,7 @@ class MainGUI:
 		# self.year_om.config(state=Tk.NORMAL)
 		# self.season_om.config(state=Tk.NORMAL)
 		self.enable_radio_buttons(self.load_radio_btn_list)
+		self.enable_radio_buttons(self.gen_radio_btn_list)
 		self.cmd_scale_load_gen.configure(state=Tk.NORMAL)
 
 		return None
@@ -846,156 +879,6 @@ class MainGUI:
 			self.abort = True
 		else:
 			return None
-
-
-class BusbarsWindow:
-	"""
-		Produces a new window which is used to contain a list of busbars which can be edited by the user and
-		then adjusted to produce the required output.
-	"""
-	def __init__(self, master, busbars=list()):
-		"""
-			Produce window which contains details of all the busbars that will be faulted and the ability to edit
-			the busbars lists
-		:param Tk.Tk() master:  This is the main window master which this one will be popped up on-top of
-		:param list busbars:  List of busbars to be faulted will initially be populated into popup
-		"""
-		# Define initial values
-		self.busbars = busbars
-		self.entries = dict()
-
-		# Get constants for how many busbars to display horizontally and vertically
-		self.columns = constants.GUI.busbar_columns
-		self.vertical_busbars = constants.GUI.vertical_busbars
-
-		# Ensure that on_closing is processed correctly
-		self.master = master
-		self.master.protocol("WM_DELETE_WINDOW", self.on_closing)
-		self.master.title = 'Identified Busbars'
-
-		# Add label telling what is displayed in the box below
-		lbl = Tk.Label(self.master, text='Edit busbar numbers to be faulted')
-		lbl.grid(row=0, column=0)
-		_ = CreateToolTip(lbl, text='Add or delete busbars to the list below and close window to continue.')
-
-		# Produce a temporary frame which will house the entry boxes and place it in the window
-		# TODO: May need to define height and width in real time
-		busbar_frame = Tk.Frame(self.master, relief=Tk.GROOVE, bd=1)
-		busbar_frame.grid(row=1, column=0)
-
-		# Create a canvas into which the busbar_frame will be housed so that scroll bars can be added for the
-		# busbar list
-		self.canvas = Tk.Canvas(busbar_frame)
-		# Add the canvas into a new frame
-		self.entry_frame = Tk.Frame(self.canvas)
-		# Create scroll bars which will control the busbar_frame within the canvas and configure the controls
-		busbar_scrollbar = Tk.Scrollbar(busbar_frame, orient="vertical", command=self.canvas.yview)
-		self.canvas.configure(yscrollcommand=busbar_scrollbar.set)
-
-		# Locate the scroll bars on the right hand side of the canvas and locate canvas within newly created frame
-		busbar_scrollbar.pack(side="right", fill="y")
-		_ = CreateToolTip(busbar_scrollbar, text=(
-			'If more busbars are needed then once out of space, close window and reopen to create additional space.'
-		))
-		self.canvas.pack(side="left")
-		self.canvas.create_window((0, 0), window=self.entry_frame, anchor='nw')
-
-		# Bind the action of the scrollbar with the movement of the canvas
-		self.entry_frame.bind("<Configure>", self.canvas_scroll_function)
-
-	def canvas_scroll_function(self, _event):
-		"""
-			Function to control what happens when the frame is scrolled
-		:return:
-		"""
-		# Calculate the required width assuming busbar entry box size width is 60 pixels
-		width = self.columns * 60
-		# Calculate the required height assuming busbar entry box size height is 20 pixels
-		height = self.vertical_busbars * 20
-		self.canvas.configure(scrollregion=self.canvas.bbox("all"), width=width, height=height)
-
-	def add_entry_boxes(self, spare_busbars=constants.GUI.empty_busbars):
-		"""
-			Adds the entry boxes ready to be populated with busbars
-		:param int spare_busbars:  (optional=30) Number of extra rows to allow for additional busbars
-		:return:
-		"""
-		# Calculate the number of entry boxes that are necessary allowing for extra number of busbars
-		# Has to convert to float to ensure rounds up when dividing
-		table_height = int(math.ceil(float(len(self.busbars)+spare_busbars) / float(self.columns)))
-		counter = 0
-
-		# Loop through each row and column adding a new entry box
-		for row in xrange(table_height):
-			for column in xrange(self.columns):
-				# Create entry box for each busbar of the required size
-				self.entries[counter] = Tk.Entry(self.entry_frame, width=constants.GUI.busbar_box_size)
-				self.entries[counter].grid(row=row, column=column)
-				counter += 1
-
-		return None
-
-	def populate_busbars(self):
-		"""
-			Function will replace all entries in the box with busbars provided on input
-		:return None:
-		"""
-		# Populate entry box until all busbars reached
-		for i, bus in enumerate(self.busbars):
-			self.entries[i].insert(0, str(bus))
-
-		return None
-
-	def on_closing(self):
-		"""
-			Function will run when closed and update the list of busbars to be faulted
-		:return None:
-		"""
-		busbars = list()
-		for entry in self.entries.values():
-			# Retrieve the value and continue to next entry box if empty
-			value = entry.get()
-			if value == '':
-				continue
-
-			# Try and convert the string input to an integer
-			try:
-				busbar = int(value)
-				busbars.append(busbar)
-			except ValueError:
-				# There is an error with the value that has been provided, ask the user if they want to continue or
-				# correct this number
-				result = tkMessageBox.askquestion(
-					title='Continue without busbar?',
-					message=(
-						'Unable to convert the busbar entry <{}> to a busbar number, do you want to ignore this value?'
-					).format(entry.get()),
-					icon='warning'
-				)
-
-				# Test what option the user provided
-				if result == 'yes':
-					# Skip this value
-					continue
-				else:
-					# Give the user an option to correct
-					print('Please correct the value {} to a busbar number'.format(value))
-					return None
-
-		# Identify busbars which either need to be removed or added to the list ensuring no duplicates
-		busbars_to_remove = set(self.busbars)-set(busbars)
-		busbars_to_add = set(busbars)-set(self.busbars)
-
-		# Loop through each busbar and delete those which are no longer included
-		for bus in busbars_to_remove:
-			self.busbars.remove(bus)
-		# Loop through each busbar and add those which are new
-		for bus in busbars_to_add:
-			self.busbars.append(bus)
-
-		# Destroy popup window
-		self.master.destroy()
-		return None
 
 
 class CreateToolTip(object):
