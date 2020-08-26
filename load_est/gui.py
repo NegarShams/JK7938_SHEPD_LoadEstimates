@@ -18,6 +18,7 @@ import logging
 import math
 import webbrowser
 from PIL import Image, ImageTk
+from collections import OrderedDict
 
 # Package specific imports
 import load_est
@@ -59,100 +60,218 @@ class MainGUI:
 		self.target_file = str()
 		self.results_pth = os.path.dirname(os.path.realpath(__file__))
 
-		# General constants
+		# Stand alone command button constants
 		self.cmd_select_sav_case = Tk.Button()
-		self.cmd_import_busbars = Tk.Button()
-		self.cmd_edit_busbars = Tk.Button()
-		self.var_fault_times_list = Tk.StringVar()
-		self.entry_fault_times = Tk.Entry()
-		self.cmd_calculate_faults = Tk.Button()
-		self.bo_reload_sav = Tk.BooleanVar()
-		self.bo_fault_3_ph_bkdy = Tk.BooleanVar()
-		self.bo_fault_3_ph_iec = Tk.BooleanVar()
-		self.bo_fault_1_ph_iec = Tk.BooleanVar()
-		self.bo_open_excel = Tk.BooleanVar()
+
+		# PSC logo constants
 		self.hyp_help_instructions = Tk.Label()
 		self.psc_logo_wm = Tk.PhotoImage()
 		self.psc_logo = Tk.Label()
 		self.psc_info = Tk.Label()
 
-		# SAV case for faults to be run on
+		# Load Options label frame constants
+		self.load_labelframe = ttk.LabelFrame()
+		self.load_radio_opt_sel = Tk.IntVar()
+		self.load_radio_btn_list = list()
+		self.load_radio_opts = OrderedDict()
+		self.load_prev_radio_opt = int()
+
+		# year drop down options
+		self.year_selected = Tk.StringVar()
+		if bool(station_dict):
+			constants.GUI.year_list = sorted(station_dict[0].load_forecast_dict.keys())
+			constants.GUI.season_list = sorted(station_dict[0].seasonal_percent_dict.keys())
+			# constants.GUI.station_dict = station_dict
+		self.year_list = constants.GUI.year_list
+		self.year_om = None
+
+		# season drop down options
+		self.season_selected = Tk.StringVar()
+		self.season_list = constants.GUI.season_list
+		self.season_om = None
+
+		# Load Selector scroll constants
+		self.load_side_lbl = Tk.Label()
+		self.load_select_frame = None
+		self.load_canvas = Tk.Canvas()
+		self.load_entry_frame = ttk.Frame()
+		self.load_scrollbar = ttk.Scrollbar()
+		# Load selector zone constants
+		self.load_boolvar_zon = dict()
+		self.zones = dict()
+		# todo just for testing to set a zone dict, set equal to constant
+		for i in range(13):
+			self.zones[i] = "zone " + str(i)
+		# Load selector gsp constants
+		self.load_boolvar_gsp = dict()
+		self.load_gsps = dict()
+		# todo just for testing to set a gsp dict, set equal to constant
+		for i in range(28):
+			self.load_gsps[i] = "gsp " + str(i)
+
+		# Add PSC logo with hyperlink to the website
+		self.add_psc_logo(row=self.row(), col=0)
+
+		self.cmd_import_load_estimates = self.add_cmd_button(
+			label='Import SSE Load Estimates .xlsx', cmd=self.import_load_estimates, row=self.row(), col=3)
+
+		# Add PSC logo with hyperlink to the website
+		self.add_psc_logo(row=self.row(), col=5)
+
+		# SAV case to be run on
 		self.sav_case = str()
 
 		# Determine label for button based on the SAV case being loaded
 		if self.sav_case:
 			lbl_sav_button = 'SAV case = {}'.format(os.path.basename(self.sav_case))
 		else:
-			lbl_sav_button = 'Select SAV Case for Fault Study'
-
-		# Add button for selecting SAV case to run
-		# self.add_cmd_sav_case(row=self.row(1), col=self.col())
+			lbl_sav_button = 'Select PSSE SAV Case'
 
 		self.cmd_select_sav_case = self.add_cmd_button(
-			label=lbl_sav_button, cmd=self.select_sav_case,  row=self.row(1), col=self.col())
+			label=lbl_sav_button, cmd=self.select_sav_case,  row=self.row(1), col=3)
 
-		if bool(station_dict):
-			constants.GUI.year_list = sorted(station_dict[0].load_forecast_dict.keys())
-			constants.GUI.season_list = sorted(station_dict[0].seasonal_percent_dict.keys())
-			# constants.GUI.station_dict = station_dict
+		# create load options labelframe
+		self.create_load_options()
 
-		self.row(2)
+		#
+		self._col, self._row, = self.master.grid_size()
+		# add cmd button to scale load
+		self.cmd_scale_load_gen = self.add_cmd_button(
+			label='Scale Load and Generation',
+			cmd=self.scale_loads,
+			row=self.row(1), col=3
+		)
+		self.cmd_scale_load_gen.configure(state=Tk.DISABLED)
+
+		# # Add tick box for whether it needs to be opened again on completion
+		# self.add_open_excel(row=self.row(1), col=self.col())
+
+		# Add PSC logo in Windows Manager
+		self.add_psc_logo_wm()
+
+		# Add PSC UK and phone number
+		self.add_psc_phone(row=self.row(1), col=0)
+
+		# Generation label frame constants
+		self.gen_labelframe = ttk.LabelFrame()
+		self.gen_radio_opt_sel = Tk.IntVar()
+		self.gen_radio_btn_list = list()
+		self.gen_radio_opts = OrderedDict()
+		self.gen_prev_radio_opt = int()
+
+		# Generation Selector scroll constants
+		self.gen_side_lbl = Tk.Label()
+		self.gen_select_frame = None
+		self.gen_canvas = Tk.Canvas()
+		self.gen_entry_frame = ttk.Frame()
+		self.gen_scrollbar = ttk.Scrollbar()
+		# gen selector zone constants
+		self.gen_boolvar_zon = dict()
+
+		# create load options labelframe
+		self.create_gen_options()
+
+		self.logger.debug('GUI window created')
+		# Produce GUI window
+		self.master.mainloop()
+
+	def create_load_options(self):
+
+		self.load_labelframe = ttk.LabelFrame(self.master, text='Load Scaling Options')
+		self.load_labelframe.grid(row=4, column=0, columnspan=4, sticky='NSEW')
+
+		self.load_radio_opt_sel = Tk.IntVar(self.master, 0)
+		self.load_prev_radio_opt = 1
+
+		# Dictionary to create multiple buttons
+		self.load_radio_opts = OrderedDict([
+			('None', 0),
+			('All Loads', 1),
+			('Selected GSP', 2),
+			('Selected Zones', 3)
+		])
+
+		self._row = 0
+		self.load_radio_btn_list = list()
+		# Loop is used to create multiple Radiobuttons
+		# rather than creating each button separately
+		for (text, value) in self.load_radio_opts.items():
+			temp_rb = Tk.Radiobutton(
+				self.load_labelframe,
+				text=text,
+				variable=self.load_radio_opt_sel,
+				value=value,
+				command=self.load_radio_button_click
+			)
+			temp_rb.grid(row=self.row(), sticky='W', padx=20, pady=5)
+			self.load_radio_btn_list.append(temp_rb)
+			self.row(1)
+
+		self.enable_radio_buttons(self.load_radio_btn_list, enable=False)
+
 		# add drop down list for year
 		self.year_selected = Tk.StringVar(self.master)
 		self.year_list = constants.GUI.year_list
 		self.year_selected.set(self.year_list[0])
 
 		self.year_om = self.add_drop_down(
-			row=self.row(1),
+			row=self.row(),
 			col=self.col(),
 			var=self.year_selected,
-			list=self.year_list
+			list=self.year_list,
+			location=self.load_labelframe
 		)
 		self.year_om.configure(state=Tk.DISABLED)
-
-		self.row(2)
+		#
 		# add drop down list for season
 		self.season_selected = Tk.StringVar(self.master)
 		self.season_list = constants.GUI.season_list
 		self.season_selected.set(self.season_list[0])
 
 		self.season_om = self.add_drop_down(
-			row=self.row(1),
-			col=self.col(),
+			row=self.row(1), col=self.col(),
 			var=self.season_selected,
-			list=self.season_list
+			list=self.season_list,
+			location=self.load_labelframe
 		)
 		self.season_om.configure(state=Tk.DISABLED)
 
-		self.row(2)
-		# Add button for calculating and saving fault currents
-		self.add_cmd_calculate_faults(row=self.row(2), col=self.col())
-		self.cmd_calculate_faults.configure(state=Tk.DISABLED)
+		return None
 
-		# # Add tick box for whether it needs to be opened again on completion
-		# self.add_open_excel(row=self.row(1), col=self.col())
+	def create_gen_options(self):
 
-		# Add help button which loads work instructions
-		self.add_hyp_help_instructions(row=self.row(1), col=self.col())
+		self.gen_labelframe = ttk.LabelFrame(self.master, text='Generation Scaling Options')
+		self.gen_labelframe.grid(row=4, column=4, columnspan=4, sticky='NSEW')
 
-		# Add separator
-		self.add_sep(row=self.row(1), col_span=2)
+		self.gen_radio_opt_sel = Tk.IntVar(self.master, 0)
+		self.gen_prev_radio_opt = 1
 
-		# Add PSC logo in Windows Manager
-		self.add_psc_logo_wm()
+		# Dictionary to create multiple buttons
+		self.gen_radio_opts = OrderedDict([
+			('None', 0),
+			('All Generators', 1),
+			('Selected Zones', 2)
+		])
 
-		# Add PSC information
-		# #self.add_psc_info(row=self.row(1), col=self.col())
+		self._row = 0
+		self.gen_radio_btn_list = list()
+		# Loop is used to create multiple Radiobuttons
+		# rather than creating each button separately
+		for (text, value) in self.gen_radio_opts.items():
+			temp_rb = Tk.Radiobutton(
+				self.gen_labelframe,
+				text=text,
+				variable=self.gen_radio_opt_sel,
+				value=value,
+				command=self.gen_radio_button_click
+			)
+			temp_rb.grid(row=self.row(), sticky='W', padx=20, pady=5)
+			self.gen_radio_btn_list.append(temp_rb)
+			self.row(1)
 
-		# Add PSC logo with hyperlink to the website
-		self.add_psc_logo(row=self.row(1), col=self.col())
+		self.enable_radio_buttons(self.gen_radio_btn_list, enable=False)
 
-		# Add PSC UK and phone number
-		self.add_psc_phone(row=self.row(1), col=self.col())
-
-		self.logger.debug('GUI window created')
-		# Produce GUI window
-		self.master.mainloop()
+		return None
 
 	def row(self, i=0):
 		"""
@@ -172,7 +291,7 @@ class MainGUI:
 		self._col += i
 		return self._col
 
-	def add_drop_down(self, row, col, var, list):
+	def add_drop_down(self, row, col, var, list, location=None):
 		"""
 			Function to all a list of optimisation options which will become enabled if the user selects to run a
 			virtual statcom study
@@ -182,101 +301,220 @@ class MainGUI:
 		:return dropdown_optimisaiton_option:
 		"""
 		# Check whether there is a successfully loaded SAV case to enable the list option
-
-		var.set(list[0])
-		# Create the drop down list to be shown in the GUI
-		w = Tk.OptionMenu(
-			self.master,
-			var,
-			*list
-		)
-		w.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E)
+		if location is None:
+			var.set(list[0])
+			# Create the drop down list to be shown in the GUI
+			w = Tk.OptionMenu(
+				self.master,
+				var,
+				*list
+			)
+			w.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E)
+		else:
+			var.set(list[0])
+			# Create the drop down list to be shown in the GUI
+			w = Tk.OptionMenu(
+				location,
+				var,
+				*list
+			)
+			w.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E, padx=20, pady=5)
 
 		# return dropdown_optimisation_options
 		return w
 
-	def add_cmd_sav_case(self, row, col):
+	def add_cmd_button(self, label, cmd, row, col, location=None):
 		"""
 			Function just adds the command button to the GUI which is used for selecting the SAV case
 		:param int row: Row number to use
 		:param int col: Column number to use
 		:return None:
 		"""
-		# Determine label for button based on the SAV case being loaded
-		if self.sav_case:
-			lbl_sav_button = 'SAV case = {}'.format(os.path.basename(self.sav_case))
+		if location is None:
+			# Create button and assign to Grid
+			cmd_btn = Tk.Button(self.master, text=label, command=cmd)
+			# self.cmd_select_sav_case.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E)
+			cmd_btn.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E, padx=5, pady=5)
+			# CreateToolTip(widget=self.cmd_select_sav_case, text=(
+			# 	'Select the SAV case for which fault studies should be run.'
+			# ))
 		else:
-			lbl_sav_button = 'Select SAV Case for Fault Study'
+			cmd_btn = Tk.Button(location, text=label, command=cmd)
+			# self.cmd_select_sav_case.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E)
+			cmd_btn.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E, padx=5, pady=5)
+			# CreateToolTip(widget=self.cmd_select_sav_case, text=(
+			# 	'Select the SAV case for which fault studies should be run.'
+			# ))
 
-		# Create button and assign to Grid
-		self.cmd_select_sav_case = Tk.Button(
-			self.master,
-			text=lbl_sav_button,
-			command=self.select_sav_case)
-		# self.cmd_select_sav_case.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E)
-		self.cmd_select_sav_case.grid(row=row, column=col, columnspan=2)
-		# CreateToolTip(widget=self.cmd_select_sav_case, text=(
-		# 	'Select the SAV case for which fault studies should be run.'
-		# ))
-		return None
-
-	def add_cmd_button(self, label, cmd, row, col):
-		"""
-			Function just adds the command button to the GUI which is used for selecting the SAV case
-		:param int row: Row number to use
-		:param int col: Column number to use
-		:return None:
-		"""
-		# Create button and assign to Grid
-		cmd_btn = Tk.Button(self.master, text=label, command=cmd)
-		# self.cmd_select_sav_case.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E)
-		cmd_btn.grid(row=row, column=col, columnspan=2)
-		# CreateToolTip(widget=self.cmd_select_sav_case, text=(
-		# 	'Select the SAV case for which fault studies should be run.'
-		# ))
 		return cmd_btn
 
+	def scale_loads(self):
 
+		return
 
-	def add_cmd_import_busbars(self, row, col):
-		"""
-			Function just adds the command button to the GUI which is used for selecting a spreadsheet with
-			a list of busbars to fault
-		:param int row: Row number to use
-		:param int col: Column number to use
-		:return None:
-		"""
-		# Add button for selecting busbars to fault
-		lbl_button = 'Import list of busbars'
-		self.cmd_import_busbars = Tk.Button(
-			self.master,
-			text=lbl_button,
-			command=self.import_busbars_list)
-		self.cmd_import_busbars.grid(row=row, column=col)
-		CreateToolTip(widget=self.cmd_import_busbars, text=(
-			'Import a list of busbars from a spreadsheet for further editing.'
-		))
+	def import_load_estimates(self):
+
+		return
+
+	def load_radio_button_click(self):
+
+		if self.load_radio_opt_sel.get() == 0:
+			self.year_om.config(state=Tk.DISABLED)
+			self.season_om.config(state=Tk.DISABLED)
+			self.remove_load_bottom_selector()
+		if self.load_radio_opt_sel.get() == 1:
+			self.year_om.config(state=Tk.NORMAL)
+			self.season_om.config(state=Tk.NORMAL)
+			self.remove_load_bottom_selector()
+		elif self.load_radio_opt_sel.get() > 1 and self.load_radio_opt_sel.get() != self.load_prev_radio_opt:
+			self.year_om.config(state=Tk.NORMAL)
+			self.season_om.config(state=Tk.NORMAL)
+			self.create_load_select_frame()
+
+		self.load_prev_radio_opt = self.load_radio_opt_sel.get()
 		return None
 
-	def add_cmd_edit_busbars(self, row, col):
+	def gen_radio_button_click(self):
+
+		if self.load_radio_opt_sel.get() == 0:
+			self.year_om.config(state=Tk.DISABLED)
+			self.season_om.config(state=Tk.DISABLED)
+			self.remove_load_bottom_selector()
+		if self.load_radio_opt_sel.get() == 1:
+			self.year_om.config(state=Tk.NORMAL)
+			self.season_om.config(state=Tk.NORMAL)
+			self.remove_load_bottom_selector()
+		elif self.load_radio_opt_sel.get() > 1 and self.load_radio_opt_sel.get() != self.load_prev_radio_opt:
+			self.year_om.config(state=Tk.NORMAL)
+			self.season_om.config(state=Tk.NORMAL)
+			self.create_load_select_frame()
+
+		self.load_prev_radio_opt = self.load_radio_opt_sel.get()
+		return None
+
+	def enable_radio_buttons(self, radio_btn_list, enable=True):
+
+		for radio_btn in radio_btn_list:
+			if enable:
+				radio_btn.config(state=Tk.NORMAL)
+			else:
+				radio_btn.config(state=Tk.DISABLED)
+
+		return None
+
+	def create_load_select_frame(self):
+
+		if self.load_radio_opt_sel.get() == 2:
+			lbl = 'Select GSP(s):'
+		elif self.load_radio_opt_sel.get() == 3:
+			lbl = 'Select Zone(s):'
+
+		if self.load_select_frame is None:
+			master_col, master_rows,  = self.master.grid_size()
+			self._row = master_rows
+			self._col = 0
+			# Label for what is included in entry
+			self.load_side_lbl = Tk.Label(master=self.load_labelframe, text=lbl)
+			self.load_side_lbl.grid(row=self.row(1), column=self.col())
+
+			# Produce a frame which will house the zones check buttons and place them in the window
+			# self.zon_frame = ttk.Frame(self.master, relief=Tk.GROOVE, style=self.styles.frame_outer)
+			self.load_select_frame = ttk.Frame(self.load_labelframe, relief=Tk.GROOVE)
+			# zon_frame = ttk.Frame(self.master, relief=Tk.GROOVE, bd=1, style=self.styles.frame)
+			self.load_select_frame.grid(row=self.row(1), column=self.col(), columnspan=4)
+
+			# Create a canvas into which the zon_frame will be housed so that scroll bars can be added for the
+			# network zone list
+			self.load_canvas = Tk.Canvas(self.load_select_frame)
+
+			# Add the canvas into a new frame
+			# self.entry_frame = ttk.Frame(self.canvas, style=self.styles.frame)
+			self.load_entry_frame = ttk.Frame(self.load_canvas)
+
+			# Create scroll bars which will control the zon_frame within the canvas and configure the controls
+			# self.zon_scrollbar = ttk.Scrollbar(
+			# 	self.zon_frame, orient="vertical", command=self.canvas.yview, style=self.styles.scrollbar
+			# )
+			self.load_scrollbar = ttk.Scrollbar(
+				self.load_select_frame, orient="vertical", command=self.load_canvas.yview
+			)
+			self.load_canvas.configure(yscrollcommand=self.load_scrollbar.set)
+
+			# Locate the scroll bars on the right hand side of the canvas and locate canvas within newly created frame
+			self.load_scrollbar.pack(side="right", fill="y")
+			self.load_canvas.pack(side="left")
+			self.load_canvas.create_window((0, 0), window=self.load_entry_frame, anchor='nw')
+
+			# Bind the action of the scrollbar with the movement of the canvas
+			self.load_entry_frame.bind("<Configure>", self.canvas_scroll_function)
+			self.move_widgets_down()
+
+		else:
+			self.load_side_lbl.config(text=lbl)
+			if len(self.load_entry_frame.winfo_children()) > 0:
+				for widget in self.load_entry_frame.winfo_children():
+					widget.destroy()
+
+		if self.load_radio_opt_sel.get() == 2:
+			# 'Select GSP(s):'
+			for gsp in self.load_gsps:
+				self.load_boolvar_gsp[gsp] = Tk.BooleanVar()
+				self.load_boolvar_gsp[gsp].set(0)
+
+			counter = 0
+			for gsp in self.load_gsps:
+				lbl = "{}".format(self.load_gsps[gsp])
+				check_button = ttk.Checkbutton(
+					self.load_entry_frame, text=lbl, variable=self.load_boolvar_gsp[gsp],
+				)
+				check_button.grid(row=counter, column=0, sticky="w")
+				counter += 1
+			self.load_canvas.yview_moveto(0)
+
+		if self.load_radio_opt_sel.get() == 3:
+			# 'Select Zone(s):'
+			for zone in self.zones:
+				self.load_boolvar_zon[zone] = Tk.BooleanVar()
+				self.load_boolvar_zon[zone].set(0)
+
+			counter = 0
+			for zone in self.zones:
+				lbl = "{}".format(self.zones[zone])
+				check_button = ttk.Checkbutton(
+					self.load_entry_frame, text=lbl, variable=self.load_boolvar_zon[zone],
+				)
+				check_button.grid(row=counter, column=0, sticky="w")
+				counter += 1
+			self.load_canvas.yview_moveto(0)
+
+		return None
+
+	def canvas_scroll_function(self, _event):
 		"""
-			Function pops up a window to allow editing of the busbar list
-		:param int row: Row number to use
-		:param int col: Column number to use
+			Function to control what happens when the frame is scrolled
 		:return None:
 		"""
-		# Add button for selecting busbars to fault
-		lbl_button = 'Edit Busbars List'
-		self.cmd_edit_busbars = Tk.Button(
-			self.master,
-			text=lbl_button,
-			command=self.edit_busbars_list)
-		self.cmd_edit_busbars.grid(row=row, column=col)
-		# #self.cmd_edit_busbars.config(state='disabled')
-		CreateToolTip(widget=self.cmd_edit_busbars, text=(
-			'A new window will popup which allows the busbars list to be edited / reviewed\n'
-			'TODO: Code has not been written for this yet'
-		))
+
+		# self.canvas.configure(
+		# 	scrollregion=self.canvas.bbox("all"), width=230, height=200, background=self.styles.bg_color_frame)
+		self.load_canvas.configure(
+			scrollregion=self.load_canvas.bbox("all"), width=230, height=200)
+		return None
+
+	def remove_load_bottom_selector(self):
+
+		if self.load_select_frame is not None:
+			self.load_side_lbl.grid_remove()
+			self.load_select_frame.grid_remove()
+			self.load_side_lbl = None
+			self.load_select_frame = None
+
+	def move_widgets_down(self):
+
+		master_col, master_rows, = self.master.grid_size()
+		self.cmd_scale_load_gen.grid(row=master_rows + 1, column=3)
+		self.psc_info.grid(row=master_rows+2, column=0)
+
 		return None
 
 	def add_entry_fault_times(self, row, col):
@@ -298,22 +536,6 @@ class MainGUI:
 			'Enter the durations after the fault the current should be calculated for.\n'
 			'Multiple values can be input in a list.'
 		))
-		return None
-
-	def add_cmd_calculate_faults(self, row, col):
-		"""
-			Function to add the command button for completing the GUI entry and calculating fault currents
-		:param int row:  Row number to use
-		:param int col:   Column number to use
-		:return None:
-		"""
-		lbl = 'Update PSSE sav case loads'
-		# Add command button
-		self.cmd_calculate_faults = Tk.Button(
-			self.master, text=lbl, command=self.process
-		)
-		self.cmd_calculate_faults.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E)
-		# CreateToolTip(widget=self.cmd_calculate_faults, text='Calculate fault currents')
 		return None
 
 	def add_reload_sav(self, row, col):
@@ -442,7 +664,7 @@ class MainGUI:
 		# #self.psc_logo = Tk.Label(self.master, image=img, text = 'www.pscconsulting.com', cursor = 'hand2', justify = 'center', compound = 'top', fg = 'blue', font = 'Helvetica 7 italic')
 		self.psc_logo = Tk.Label(self.master, image=img, cursor='hand2', justify='center', compound='top')
 		self.psc_logo.photo = img
-		self.psc_logo.grid(row=row, column=col, columnspan=2)
+		self.psc_logo.grid(row=row, column=col, columnspan=3, rowspan=3)
 		self.psc_logo.bind('<Button - 1>', lambda e: webbrowser.open_new('https://www.pscconsulting.com/'))
 		return None
 
@@ -525,11 +747,13 @@ class MainGUI:
 		self.sav_case = file_path
 		lbl_sav_button = 'SAV case = {}'.format(os.path.basename(self.sav_case))
 
-		# Update command button
+		# Update command and radio button status
 		self.cmd_select_sav_case.config(text=lbl_sav_button)
-		self.year_om.config(state=Tk.NORMAL)
-		self.season_om.config(state=Tk.NORMAL)
-		self.cmd_calculate_faults.config(state=Tk.NORMAL)
+		# self.year_om.config(state=Tk.NORMAL)
+		# self.season_om.config(state=Tk.NORMAL)
+		self.enable_radio_buttons(self.load_radio_btn_list)
+		self.cmd_scale_load_gen.configure(state=Tk.NORMAL)
+
 		return None
 
 	def process(self):

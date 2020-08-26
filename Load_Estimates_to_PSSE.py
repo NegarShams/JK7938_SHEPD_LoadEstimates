@@ -63,9 +63,9 @@ class Station:
 			gsp_pf = df.iat[Constants.pf_cell_tuple]
 			if not np.isnan(gsp_pf):
 				self.set_pf(gsp_pf)
-			self.gsp_scalable = bool
+			self.gsp_scalable = True
 		else:
-			self.idv_scalable = bool
+			self.idv_scalable = True
 			self.gsp_percentage = float
 
 		# Initialise name of upstream station as empty dictionary
@@ -437,12 +437,9 @@ def create_stations(df_dict):
 				# if primary passes station check add to GSP
 				if prim_station.station_check():
 					gsp_station.add_sub_station(prim_station)
-					gsp_station.gsp_scalable = True
-					prim_station.idv_scalable = True
 				# if primary passes gsp scalable check add to GSP
 				elif prim_station.gsp_scalable_check():
 					gsp_station.add_sub_station(prim_station)
-					gsp_station.gsp_scalable = True
 					prim_station.idv_scalable = False
 				# else do not add the primary station to the gsp
 				else:
@@ -603,8 +600,6 @@ def process_load_estimates_xl():
 			worksheet1 = writer.sheets[sheet2]
 			worksheet1.set_tab_color('red')
 
-
-
 	# todo use a constant to save filename
 
 	with open(os.path.join(cur_path, example_folder, "dict.pkl"), 'wb') as f:
@@ -636,11 +631,11 @@ if __name__ == '__main__':
 	psse_con = load_est.psse.PsseControl()
 	logger.log_colouring(run_in_psse=psse_con.run_in_psse)
 
-	init_psse = psse.InitialisePsspy()
-	init_psse.initialise_psse()
+	# init_psse = psse.InitialisePsspy()
+	# init_psse.initialise_psse()
 
 	gui = load_est.gui.MainGUI()
- #
+
 
 
 
