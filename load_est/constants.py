@@ -47,8 +47,8 @@ class GUI:
 	"""
 		Constants for the user interface
 	"""
-	year_list = [datetime.datetime.now().year]
-	season_list = ['Maximum Demand']
+	year_list = [datetime.datetime.now().year, datetime.datetime.now().year + 1, datetime.datetime.now().year+2]
+	season_list = ['Maximum Demand', 'Minimum Demand']
 	station_dict = dict()
 
 	gui_name = 'PSC Load Estimates Tool'
@@ -87,6 +87,135 @@ class GUI:
 		"""
 			Purely to avoid error message
 		"""
+		pass
+
+
+class GUIDefaultValues:
+	"""
+		Class will contain all the default values that are controlled / edited by the GUI
+		and are therefore all stored in one location even though referenced from multiple
+	"""
+	# Thermal violation parameters:
+	thermal_ol_pct = 100
+	branch_rate = 'C'
+	tx_rate = 'A'
+	rpf_rate = 'C'
+
+	# Bus voltage violation parameter, default is +/- 6% (i.e 0.94 p.u to 1.06 p.u):
+	volt_range = [0.94, 1.06]
+
+	# Voltage step violation parameters:
+	v_step_limit = 0.03
+
+	# Type of generation to scale
+	scale_existing = True
+	scale_end = True
+
+	# Default name for GUI
+	gui_name = 'Virtual Statcom and Capacity Evaluation Tool'
+
+	# Default study is Virtual Statcom
+	virtual_statcom_study = 1
+	capacity_evaluation_study = 2
+
+	# Whether generators should be added at end buses
+	gen_end_buses = True
+	gen_existing_buses = True
+
+	# Whether to save the temporary folders or not
+	temp_folders_save = True
+
+	# Default hosting capacity is generation
+	generation_hosting_capacity = 1
+	load_hosting_capacity = 2
+
+	# Case voltage defaults - Note can only contain 2 options due to method used in GUI for selecting case voltage
+	case_voltage_options = {
+		1: 11,
+		2: 33
+	}
+	# Default option is 33kV
+	default_case_voltage_option = 2
+
+	# File types
+	sav_types = (('PSSE (SAV) files', '*.sav'), ('All Files', '*.*'))
+	xlsx_types = (('xlsx files', '*.xlsx'), ('All Files', '*.*'))
+
+	# Default voltage parameters in the following order (
+	# - lower voltage limit (p.u.)
+	# - target voltage (p.u.)
+	# - upper voltage limit (p.u.)
+	# - voltage step limit (%)
+	# - thermal_loading_limit (%)
+	# default_limits = (
+	# 	WpdThreshold.voltage_lower,
+	# 	WpdThreshold.target_voltage,
+	# 	WpdThreshold.voltage_upper,
+	# 	WpdThreshold.step_change_limit * 100.0,
+	# 	WpdThreshold.thermal_loading_limit * 100.0
+	# )
+
+	# Default contingency option for GUI radio button selection
+	method_traditional = 'Traditional Planning'
+	method_per_contingency = 'Per Contingency'
+	method_ts_per_contingency = 'Time Series Per Contingency'
+	study_method = {
+		method_traditional: 1,
+		method_per_contingency: 2,
+		method_ts_per_contingency: 3
+	}
+	# Default method
+	method_default = study_method[method_per_contingency]
+
+	contingency_all = 'All Network Configurations'
+	contingency_intact = 'Intact System Configuration Only'
+	contingency_user_specified = 'Specific User Selected Contingencies'
+	# Values used to identify relevant radio buttons
+	contingency_values = {
+		contingency_all: 1,
+		contingency_intact: 2,
+		contingency_user_specified: 3
+	}
+	# Default selected contingency
+	contingency_default = contingency_values[contingency_intact]
+
+	# Indicating the local directory
+	local_directory = os.path.dirname(os.path.realpath(__file__))
+	img_pth_psc_main = os.path.join(local_directory, 'PSC Logo RGB Vertical.png')
+	img_pth_psc_window = os.path.join(local_directory, 'PSC Logo no tag-1200.gif')
+	img_pth_wpd_main = os.path.join(local_directory, 'WPD Midlands English.jpg')
+	hyperlink_psc_website = 'https://www.pscconsulting.com/'
+	hyperlink_wpd_website = 'https://www.westernpower.co.uk/'
+	img_size_psc = (120, 120)
+	img_size_wpd = (150, 150)
+
+	# Reference to the Tkinter binding of a mouse button
+	mouse_button_1 = '<Button - 1>'
+
+	font_family = 'Helvetica'
+	psc_uk = 'PSC UK'
+	psc_phone = '\nPSC UK:  +44 1926 675 851'
+	psc_font = ('Calibri', '10', 'bold')
+	psc_color_web_blue = '#%02x%02x%02x' % (43, 112, 170)
+	psc_color_grey = '#%02x%02x%02x' % (89, 89, 89)
+
+	# Set to WPD green
+	# color_main_window = '#%02x%02x%02x' % (222, 235, 247)
+	color_main_window = '#%02x%02x%02x' % (0, 176, 80)
+	color_frame = 'white'
+	color_scrollbar = 'light grey'
+	color_pop_up_window = 'light grey'
+
+	# Case voltage defaults - Note can only contain 2 options due to method used in GUI for selecting case voltage
+	network_selection_options = {
+		1: 'Radial BSP Networks',
+		2: 'Parallel BSP Networks'
+	}
+
+	parallel_zone_str = 'zone'
+	parallel_zone_name_str = 'zone name'
+
+	def __init__(self):
 		pass
 
 

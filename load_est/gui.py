@@ -26,6 +26,122 @@ import load_est.constants as constants
 import Load_Estimates_to_PSSE
 
 
+class CustomStyles:
+	""" Class used to customize the layout of the GUI """
+	def __init__(self):
+		"""
+			Initialise the reference to the style names
+		"""
+		self.bg_color_frame = constants.GUIDefaultValues.color_frame
+		self.bg_color_scrollbar = constants.GUIDefaultValues.color_scrollbar
+
+		# Style for all other buttons
+
+		# Style names
+		# Buttons
+		self.cmd_buttons = 'TButton'
+		self.load_sav = 'LoadSav.TButton'
+		self.cmd_run = 'Run.TButton'
+
+		# Menus
+		self.rating_options = 'TMenubutton'
+
+		# ComboBox for selecting time
+		self.combo_box = 'TCombobox'
+
+		# Styles for labels
+		self.label_general = 'TLabel'
+		self.label_lbl_frame = 'LabelFrame.TLabel'
+		self.label_res = 'Result.TLabel'
+		self.label_numgens = 'Gens.TLabel'
+		self.label_mainheading = 'MainHeading.TLabel'
+		self.label_subheading = 'SubHeading.TLabel'
+		self.label_subnames = 'SubstationNames.TLabel'
+		self.label_version_number = 'Version.TLabel'
+		self.label_notes = 'Notes.TLabel'
+		self.label_psc_info = 'PSCInfo.TLabel'
+		self.label_psc_phone = 'PSCPhone.TLabel'
+		self.label_hyperlink = 'Hyperlink.TLabel'
+
+		# Radio buttons
+		self.radio_buttons = 'TRadiobutton'
+
+		# Check buttons
+		self.check_buttons = 'TCheckbutton'
+		self.check_buttons_framed = 'Framed.TCheckbutton'
+
+		# Scroll bars
+		self.scrollbar = 'TScrollbar'
+
+		# Frames
+		self.frame = 'TFrame'
+		self.frame_outer = 'Outer.TFrame'
+		self.lbl_frame = 'TLabelframe'
+
+	def configure_styles(self):
+		"""
+			Function configures all the ttk styles used within the GUI
+			Further details here:  https://anzeljg.github.io/rin2/book2/2405/docs/tkinter/ttk-style-layer.html
+		:return:
+		"""
+		# Tidy up the repeat ttk.Style() calls
+		# Switch to a different theme
+		styles = ttk.Style()
+		styles.theme_use('xpnative')
+
+		# Configure the same font in all labels
+		standard_font = constants.GUIDefaultValues.font_family
+		bg_color = constants.GUIDefaultValues.color_main_window
+
+		s = ttk.Style()
+		s.configure('.', font=(standard_font, '8'))
+
+		# General style for all buttons and active color changes
+		s.configure(self.cmd_buttons, height=2, width=35)
+		s.configure(self.load_sav, height=2, width=30)
+
+		s.configure(self.cmd_run, height=2, width=50)
+
+		s.configure(self.rating_options, height=2, width=15)
+
+		s.configure(self.combo_box, height=2, width=50, state='readonly')
+
+		s.configure(self.label_general, background=bg_color)
+		s.configure(self.label_lbl_frame, font=(standard_font, '10'), background=bg_color, foreground='blue')
+		s.configure(self.label_mainheading, font=(standard_font, '10', 'bold'), background=bg_color)
+		s.configure(self.label_subheading, font=(standard_font, '9'), background=bg_color)
+		s.configure(self.label_version_number, font=(standard_font, '7'), background=bg_color)
+		s.configure(self.label_notes, font=(standard_font, '7'), background=bg_color)
+		s.configure(self.label_hyperlink, foreground='Blue', font=(standard_font, '7'))
+
+		s.configure(
+			self.label_psc_info, font=constants.GUIDefaultValues.psc_font,
+			color=constants.GUIDefaultValues.psc_color_web_blue, justify='center', background=bg_color
+		)
+
+		s.configure(
+			self.label_psc_phone, font=(constants.GUIDefaultValues.psc_font, '8'),
+			color=constants.GUIDefaultValues.psc_color_grey, background=bg_color
+		)
+
+		s.configure(self.radio_buttons, background=bg_color)
+		s.map(self.radio_buttons, background=[('disabled', bg_color)])
+
+		# Ensure style for check buttons is tick rather than cross
+		s.configure(self.check_buttons, background=bg_color)
+		s.configure(self.check_buttons_framed, background=self.bg_color_frame)
+
+		# Configure the scroll bar
+		s.configure(self.scrollbar, background=self.bg_color_scrollbar)
+
+		# Frames used to house other drawings
+		s.configure(self.frame, background=self.bg_color_frame)
+		s.configure(self.frame_outer, bd=1, background=self.bg_color_frame)
+
+		# configure label frame
+		s.configure(self.lbl_frame, font=('courier', 15, 'bold'), foreground='blue', background='red')
+
+
 class MainGUI:
 	"""
 		Main class to produce the GUI
@@ -48,29 +164,43 @@ class MainGUI:
 		# Initialise constants and Tk window
 		self.master = Tk.Tk()
 		self.master.title(title)
+
+		# Change color of main window
+		self.master.configure(bg=constants.GUIDefaultValues.color_main_window)
+
 		# Ensure that on_closing is processed correctly
 		self.master.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+		# Get reference to the custom styles being used
+		self.styles = CustomStyles()
+		self.styles.configure_styles()
 
 		self.fault_times = list()
 		# General constants which need to be initialised
 		self._row = 0
 		self._col = 0
+		self.xpad = 5
+		self.ypad = 5
 
 		# Target file that results will be exported to
 		self.target_file = str()
 		self.results_pth = os.path.dirname(os.path.realpath(__file__))
 
 		# Stand alone command button constants
-		self.cmd_select_sav_case = Tk.Button()
+		self.cmd_select_sav_case = ttk.Button()
 
 		# PSC logo constants
-		self.hyp_help_instructions = Tk.Label()
+		self.hyp_help_instructions = ttk.Label()
 		self.psc_logo_wm = Tk.PhotoImage()
 		self.psc_logo = Tk.Label()
 		self.psc_info = Tk.Label()
+		self.hyp_user_manual = ttk.Label()
+		self.version_tool_lbl = ttk.Label()
 
 		# Load Options label frame constants
 		self.load_labelframe = ttk.LabelFrame()
+		self._inLoadFrame = bool()
+
 		self.load_radio_opt_sel = Tk.IntVar()
 		self.load_radio_btn_list = list()
 		self.load_radio_opts = OrderedDict()
@@ -84,14 +214,16 @@ class MainGUI:
 			# constants.GUI.station_dict = station_dict
 		self.year_list = constants.GUI.year_list
 		self.year_om = None
+		self.year_om_lbl = ttk.Label()
 
 		# season drop down options
 		self.season_selected = Tk.StringVar()
 		self.season_list = constants.GUI.season_list
 		self.season_om = None
+		self.season_om_lbl = ttk.Label()
 
 		# Load Selector scroll constants
-		self.load_side_lbl = Tk.Label()
+		self.load_side_lbl = ttk.Label()
 		self.load_select_frame = None
 		self.load_canvas = Tk.Canvas()
 		self.load_entry_frame = ttk.Frame()
@@ -130,6 +262,8 @@ class MainGUI:
 		self.cmd_select_sav_case = self.add_cmd_button(
 			label=lbl_sav_button, cmd=self.select_sav_case,  row=self.row(1), col=3)
 
+		self.add_sep(row=4, col_span=8)
+
 		# create load options labelframe
 		self.create_load_options()
 
@@ -144,19 +278,17 @@ class MainGUI:
 		self.cmd_scale_load_gen.configure(state=Tk.DISABLED)
 
 		self.sav_new_psse_case_boolvar = Tk.BooleanVar()
-		self.sav_new_psse_case_button = ttk.Checkbutton(
-			self.master, text='Save new case after scaling', variable=self.sav_new_psse_case_boolvar
+		self.sav_new_psse_case_chkbox = ttk.Checkbutton(
+			self.master, text='Save new case after scaling', variable=self.sav_new_psse_case_boolvar,
+			style=self.styles.check_buttons
 		)
-		self.sav_new_psse_case_button.grid(row=self.row(1), column=3, columnspan=2, sticky=Tk.W + Tk.E, padx=5, pady=5)
+		self.sav_new_psse_case_chkbox.grid(row=self.row(1), column=3, columnspan=2, padx=5, pady=5)
 
 		# # Add tick box for whether it needs to be opened again on completion
 		# self.add_open_excel(row=self.row(1), col=self.col())
 
 		# Add PSC logo in Windows Manager
 		self.add_psc_logo_wm()
-
-		# Add PSC UK and phone number
-		self.add_psc_phone(row=self.row(1), col=0)
 
 		# Generation label frame constants
 		self.gen_labelframe = ttk.LabelFrame()
@@ -181,14 +313,20 @@ class MainGUI:
 		# create load options labelframe
 		self.create_gen_options()
 
+		self._col, self._row, = self.master.grid_size()
+		# Add PSC UK and phone number
+		self.add_psc_phone(row=self.row(), col=0)
+		self.add_hyp_user_manual(row=self.row(), col=self.col()-1)
+
 		self.logger.debug('GUI window created')
 		# Produce GUI window
 		self.master.mainloop()
 
 	def create_load_options(self):
 
-		self.load_labelframe = ttk.LabelFrame(self.master, text='Load Scaling Options')
-		self.load_labelframe.grid(row=4, column=0, columnspan=4, sticky='NSEW')
+		label = ttk.Label(self.master, text='Load Scaling Options:', style=self.styles.label_lbl_frame)
+		self.load_labelframe = ttk.LabelFrame(self.master, labelwidget=label, style=self.styles.lbl_frame)
+		self.load_labelframe.grid(row=5, column=0, columnspan=4, padx=self.xpad, pady=self.ypad, sticky='NSEW')
 
 		self.load_radio_opt_sel = Tk.IntVar(self.master, 0)
 		self.load_prev_radio_opt = 1
@@ -197,23 +335,24 @@ class MainGUI:
 		self.load_radio_opts = OrderedDict([
 			('None', 0),
 			('All Loads', 1),
-			('Selected GSP', 2),
-			('Selected Zones', 3)
+			('Selected GSP Only', 2),
+			('Selected Zones Only', 3)
 		])
 
 		self._row = 0
 		self.load_radio_btn_list = list()
-		# Loop is used to create multiple Radiobuttons
+		# Loop is used to create multiple Radio buttons
 		# rather than creating each button separately
 		for (text, value) in self.load_radio_opts.items():
-			temp_rb = Tk.Radiobutton(
+			temp_rb = ttk.Radiobutton(
 				self.load_labelframe,
 				text=text,
 				variable=self.load_radio_opt_sel,
 				value=value,
-				command=self.load_radio_button_click
+				command=self.load_radio_button_click,
+				style=self.styles.radio_buttons
 			)
-			temp_rb.grid(row=self.row(), sticky='W', padx=20, pady=5)
+			temp_rb.grid(row=self.row(), columnspan=2, sticky='W', padx=self.xpad, pady=self.ypad)
 			self.load_radio_btn_list.append(temp_rb)
 			self.row(1)
 
@@ -224,22 +363,34 @@ class MainGUI:
 		self.year_list = constants.GUI.year_list
 		self.year_selected.set(self.year_list[0])
 
+		self.year_om_lbl = ttk.Label(master=self.load_labelframe, text='Year: ', style=self.styles.label_general)
+		self.year_om_lbl.grid(row=self.row(), column=self.col(), rowspan=1, sticky=Tk.E, padx=self.xpad)
+		# grey out text initially
+		self.year_om_lbl.configure(foreground='grey')
+
 		self.year_om = self.add_drop_down(
 			row=self.row(),
-			col=self.col(),
+			col=self.col(1),
 			var=self.year_selected,
 			list=self.year_list,
 			location=self.load_labelframe
 		)
 		self.year_om.configure(state=Tk.DISABLED)
-		#
+
+		self._col = 0
 		# add drop down list for season
 		self.season_selected = Tk.StringVar(self.master)
 		self.season_list = constants.GUI.season_list
 		self.season_selected.set(self.season_list[0])
 
+		self.season_om_lbl = ttk.Label(
+			master=self.load_labelframe, text='Demand Scaling: ', style=self.styles.label_general)
+		self.season_om_lbl.grid(row=self.row(1), column=self.col(), rowspan=1, sticky=Tk.E, padx=self.xpad)
+		# grey out text initially
+		self.season_om_lbl.configure(foreground='grey')
+
 		self.season_om = self.add_drop_down(
-			row=self.row(1), col=self.col(),
+			row=self.row(), col=self.col(1),
 			var=self.season_selected,
 			list=self.season_list,
 			location=self.load_labelframe
@@ -250,8 +401,9 @@ class MainGUI:
 
 	def create_gen_options(self):
 
-		self.gen_labelframe = ttk.LabelFrame(self.master, text='Generation Scaling Options')
-		self.gen_labelframe.grid(row=4, column=4, columnspan=4, sticky='NSEW')
+		label = ttk.Label(self.master, text='Generation Scaling Options:', style=self.styles.label_lbl_frame)
+		self.gen_labelframe = ttk.LabelFrame(self.master, labelwidget=label, style=self.styles.lbl_frame)
+		self.gen_labelframe.grid(row=5, column=4, columnspan=4, padx=self.xpad, pady=self.ypad, sticky='NSEW')
 
 		self.gen_radio_opt_sel = Tk.IntVar(self.master, 0)
 		self.gen_prev_radio_opt = 1
@@ -260,7 +412,7 @@ class MainGUI:
 		self.gen_radio_opts = OrderedDict([
 			('None', 0),
 			('All Generators', 1),
-			('Selected Zones', 2)
+			('Selected Zones Only', 2)
 		])
 
 		self._row = 0
@@ -268,14 +420,15 @@ class MainGUI:
 		# Loop is used to create multiple Radiobuttons
 		# rather than creating each button separately
 		for (text, value) in self.gen_radio_opts.items():
-			temp_rb = Tk.Radiobutton(
+			temp_rb = ttk.Radiobutton(
 				self.gen_labelframe,
 				text=text,
 				variable=self.gen_radio_opt_sel,
 				value=value,
-				command=self.gen_radio_button_click
+				command=self.gen_radio_button_click,
+				style=self.styles.radio_buttons
 			)
-			temp_rb.grid(row=self.row(), sticky='W', padx=20, pady=5)
+			temp_rb.grid(row=self.row(), sticky='W', padx=self.xpad, pady=self.ypad)
 			self.gen_radio_btn_list.append(temp_rb)
 			self.row(1)
 
@@ -316,23 +469,14 @@ class MainGUI:
 		if location is None:
 			var.set(list[0])
 			# Create the drop down list to be shown in the GUI
-			w = Tk.OptionMenu(
-				self.master,
-				var,
-				*list
-			)
-			w.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E)
+			w = ttk.OptionMenu(self.master, var, list[0], *list, style=self.styles.rating_options)
+			w.grid(row=row, column=col, columnspan=1, padx=self.xpad, pady=self.ypad)
 		else:
 			var.set(list[0])
 			# Create the drop down list to be shown in the GUI
-			w = Tk.OptionMenu(
-				location,
-				var,
-				*list
-			)
-			w.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E, padx=20, pady=5)
+			w = ttk.OptionMenu(location, var, list[0], *list, style=self.styles.rating_options)
+			w.grid(row=row, column=col, columnspan=1, padx=self.xpad, pady=self.ypad)
 
-		# return dropdown_optimisation_options
 		return w
 
 	def add_cmd_button(self, label, cmd, row, col, location=None):
@@ -344,21 +488,46 @@ class MainGUI:
 		"""
 		if location is None:
 			# Create button and assign to Grid
-			cmd_btn = Tk.Button(self.master, text=label, command=cmd)
+			cmd_btn = ttk.Button(self.master, text=label, command=cmd, style=self.styles.cmd_buttons)
 			# self.cmd_select_sav_case.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E)
-			cmd_btn.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E, padx=5, pady=5)
+			cmd_btn.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E, padx=self.xpad, pady=self.ypad)
 			# CreateToolTip(widget=self.cmd_select_sav_case, text=(
 			# 	'Select the SAV case for which fault studies should be run.'
 			# ))
 		else:
-			cmd_btn = Tk.Button(location, text=label, command=cmd)
+			cmd_btn = ttk.Button(location, text=label, command=cmd, style=self.styles.cmd_buttons)
 			# self.cmd_select_sav_case.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E)
-			cmd_btn.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E, padx=5, pady=5)
+			cmd_btn.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E, padx=self.xpad, pady=self.ypad)
 			# CreateToolTip(widget=self.cmd_select_sav_case, text=(
 			# 	'Select the SAV case for which fault studies should be run.'
 			# ))
 
 		return cmd_btn
+
+	def add_hyp_user_manual(self, row, col):
+		"""
+			Function just adds the version and hyperlink to the user manual to the GUI
+		:param row: Row Number to use
+		:param col: Column number to use
+		:return None:
+		"""
+		# Create user manual link and reference to the version of the tool
+		self.hyp_user_manual = ttk.Label(
+			self.master, text="User Guide", cursor="hand2", style=self.styles.label_hyperlink)
+		self.hyp_user_manual.grid(row=row, column=col, sticky="se", padx=self.xpad, pady=self.ypad)
+		# self.hyp_user_manual.bind('<Button - 1>', lambda e: webbrowser.open_new(
+		# 	os.path.join(local_directory, 'JK7261-GUI-02 User Guide.pdf')))
+		self.hyp_user_manual.bind('<Button - 1>', lambda e: webbrowser.open_new('https://www.pscconsulting.com/'))
+		self.version_tool_lbl = ttk.Label(
+			self.master, text='V00.001', style=self.styles.label_version_number)
+		self.version_tool_lbl.grid(row=row, column=col-1, sticky="se", padx=self.xpad, pady=self.ypad)
+		CreateToolTip(widget=self.hyp_user_manual, text=(
+			"Open the GUI user guide"
+		))
+		CreateToolTip(widget=self.version_tool_lbl, text=(
+			"Version of the tool"
+		))
+		return None
 
 	def scale_loads(self):
 
@@ -369,21 +538,42 @@ class MainGUI:
 		return
 
 	def load_radio_button_click(self):
+		"""
+		Function that is called when a load radio button is clicked to enable buttons and create/remove load selection
+		frame
+		:return:
+		"""
 
 		if self.load_radio_opt_sel.get() == 0:
+			# disable year and seasons drop downs and labels
 			self.year_om.config(state=Tk.DISABLED)
+			self.year_om_lbl.config(foreground='grey')
 			self.season_om.config(state=Tk.DISABLED)
+			self.season_om_lbl.config(foreground='grey')
+			# remove the bottom load selector
 			self.remove_load_bottom_selector()
+
 		if self.load_radio_opt_sel.get() == 1:
+			# enable year and seasons drop downs and labels
 			self.year_om.config(state=Tk.NORMAL)
+			self.year_om_lbl.config(foreground='')
 			self.season_om.config(state=Tk.NORMAL)
+			self.season_om_lbl.config(foreground='')
+			# remove the bottom load selector
 			self.remove_load_bottom_selector()
+
 		elif self.load_radio_opt_sel.get() > 1 and self.load_radio_opt_sel.get() != self.load_prev_radio_opt:
+			# enable year and seasons drop downs and labels
 			self.year_om.config(state=Tk.NORMAL)
+			self.year_om_lbl.config(foreground='')
 			self.season_om.config(state=Tk.NORMAL)
+			self.season_om_lbl.config(foreground='')
+			# create load selector frame
 			self.create_load_select_frame()
 
+		# store last radio button selected in load_prev_radio_opt
 		self.load_prev_radio_opt = self.load_radio_opt_sel.get()
+
 		return None
 
 	def gen_radio_button_click(self):
@@ -413,6 +603,7 @@ class MainGUI:
 
 	def create_load_select_frame(self):
 
+		lbl = ''
 		if self.load_radio_opt_sel.get() == 2:
 			lbl = 'Select GSP(s):'
 		elif self.load_radio_opt_sel.get() == 3:
@@ -423,29 +614,23 @@ class MainGUI:
 			self._row = master_rows
 			self._col = 0
 			# Label for what is included in entry
-			self.load_side_lbl = Tk.Label(master=self.load_labelframe, text=lbl)
-			self.load_side_lbl.grid(row=self.row(1), column=self.col())
+			self.load_side_lbl = ttk.Label(master=self.load_labelframe, text=lbl, style=self.styles.label_general)
+			self.load_side_lbl.grid(row=self.row(1), column=self.col(), sticky=Tk.W, padx=self.xpad, pady=self.ypad)
 
 			# Produce a frame which will house the zones check buttons and place them in the window
-			# self.zon_frame = ttk.Frame(self.master, relief=Tk.GROOVE, style=self.styles.frame_outer)
-			self.load_select_frame = ttk.Frame(self.load_labelframe, relief=Tk.GROOVE)
-			# zon_frame = ttk.Frame(self.master, relief=Tk.GROOVE, bd=1, style=self.styles.frame)
-			self.load_select_frame.grid(row=self.row(1), column=self.col(), columnspan=4)
+			self.load_select_frame = ttk.Frame(self.load_labelframe, relief=Tk.GROOVE, style=self.styles.frame_outer)
+			self.load_select_frame.grid(
+				row=self.row(1), column=self.col(), columnspan=4, sticky='NSEW', padx=self.xpad, pady=self.ypad)
 
-			# Create a canvas into which the zon_frame will be housed so that scroll bars can be added for the
-			# network zone list
+			# Create a canvas into which the load_select_frame will be housed so that scroll bars can be added
 			self.load_canvas = Tk.Canvas(self.load_select_frame)
 
 			# Add the canvas into a new frame
-			# self.entry_frame = ttk.Frame(self.canvas, style=self.styles.frame)
-			self.load_entry_frame = ttk.Frame(self.load_canvas)
+			self.load_entry_frame = ttk.Frame(self.load_canvas, style=self.styles.frame)
 
 			# Create scroll bars which will control the zon_frame within the canvas and configure the controls
-			# self.zon_scrollbar = ttk.Scrollbar(
-			# 	self.zon_frame, orient="vertical", command=self.canvas.yview, style=self.styles.scrollbar
-			# )
 			self.load_scrollbar = ttk.Scrollbar(
-				self.load_select_frame, orient="vertical", command=self.load_canvas.yview
+				self.load_select_frame, orient="vertical", command=self.load_canvas.yview, style=self.styles.scrollbar
 			)
 			self.load_canvas.configure(yscrollcommand=self.load_scrollbar.set)
 
@@ -456,6 +641,8 @@ class MainGUI:
 
 			# Bind the action of the scrollbar with the movement of the canvas
 			self.load_entry_frame.bind("<Configure>", self.load_canvas_scroll_function)
+			self.load_select_frame.bind("<Enter>", self._bound_to_mousewheel)
+			self.load_select_frame.bind("<Leave>", self._unbound_to_mousewheel)
 			self.move_widgets_down()
 
 		else:
@@ -474,7 +661,10 @@ class MainGUI:
 			for gsp in self.load_gsps:
 				lbl = "{}".format(self.load_gsps[gsp])
 				check_button = ttk.Checkbutton(
-					self.load_entry_frame, text=lbl, variable=self.load_boolvar_gsp[gsp],
+					self.load_entry_frame,
+					text=lbl,
+					variable=self.load_boolvar_gsp[gsp],
+					style=self.styles.check_buttons_framed
 				)
 				check_button.grid(row=counter, column=0, sticky="w")
 				counter += 1
@@ -490,7 +680,10 @@ class MainGUI:
 			for zone in self.zones:
 				lbl = "{}".format(self.zones[zone])
 				check_button = ttk.Checkbutton(
-					self.load_entry_frame, text=lbl, variable=self.load_boolvar_zon[zone],
+					self.load_entry_frame,
+					text=lbl,
+					variable=self.load_boolvar_zon[zone],
+					style=self.styles.check_buttons_framed
 				)
 				check_button.grid(row=counter, column=0, sticky="w")
 				counter += 1
@@ -500,6 +693,7 @@ class MainGUI:
 
 	def create_gen_select_frame(self):
 
+		lbl=''
 		if self.gen_radio_opt_sel.get() == 2:
 			lbl = 'Select Zone(s):'
 
@@ -508,29 +702,24 @@ class MainGUI:
 			self._row = master_rows
 			self._col = 0
 			# Label for what is included in entry
-			self.gen_side_lbl = Tk.Label(master=self.gen_labelframe, text=lbl)
-			self.gen_side_lbl.grid(row=self.row(1), column=self.col())
+			self.gen_side_lbl = ttk.Label(master=self.gen_labelframe, text=lbl, style=self.styles.label_general)
+			self.gen_side_lbl.grid(row=self.row(1), column=self.col(),sticky='W', padx=self.xpad, pady=self.ypad)
 
 			# Produce a frame which will house the zones check buttons and place them in the window
-			# self.zon_frame = ttk.Frame(self.master, relief=Tk.GROOVE, style=self.styles.frame_outer)
-			self.gen_select_frame = ttk.Frame(self.gen_labelframe, relief=Tk.GROOVE)
-			# zon_frame = ttk.Frame(self.master, relief=Tk.GROOVE, bd=1, style=self.styles.frame)
-			self.gen_select_frame.grid(row=self.row(1), column=self.col(), columnspan=4)
+			self.gen_select_frame = ttk.Frame(self.gen_labelframe, relief=Tk.GROOVE, style=self.styles.frame_outer)
+			self.gen_select_frame.grid(
+				row=self.row(1), column=self.col(), columnspan=4, sticky='NSEW', padx=self.xpad, pady=self.ypad)
 
 			# Create a canvas into which the zon_frame will be housed so that scroll bars can be added for the
 			# network zone list
 			self.gen_canvas = Tk.Canvas(self.gen_select_frame)
 
 			# Add the canvas into a new frame
-			# self.entry_frame = ttk.Frame(self.canvas, style=self.styles.frame)
-			self.gen_entry_frame = ttk.Frame(self.gen_canvas)
+			self.gen_entry_frame = ttk.Frame(self.gen_canvas, style=self.styles.frame)
 
 			# Create scroll bars which will control the zon_frame within the canvas and configure the controls
-			# self.zon_scrollbar = ttk.Scrollbar(
-			# 	self.zon_frame, orient="vertical", command=self.canvas.yview, style=self.styles.scrollbar
-			# )
 			self.gen_scrollbar = ttk.Scrollbar(
-				self.gen_select_frame, orient="vertical", command=self.gen_canvas.yview
+				self.gen_select_frame, orient="vertical", command=self.gen_canvas.yview, style=self.styles.scrollbar
 			)
 			self.gen_canvas.configure(yscrollcommand=self.gen_scrollbar.set)
 
@@ -541,6 +730,8 @@ class MainGUI:
 
 			# Bind the action of the scrollbar with the movement of the canvas
 			self.gen_entry_frame.bind("<Configure>", self.gen_canvas_scroll_function)
+			self.gen_select_frame.bind("<Enter>", self._bound_to_mousewheel)
+			self.gen_select_frame.bind("<Leave>", self._unbound_to_mousewheel)
 			self.move_widgets_down()
 
 		else:
@@ -560,13 +751,38 @@ class MainGUI:
 			for zone in self.zones:
 				lbl = "{}".format(self.zones[zone])
 				check_button = ttk.Checkbutton(
-					self.gen_entry_frame, text=lbl, variable=self.gen_boolvar_zon[zone],
+					self.gen_entry_frame,
+					text=lbl,
+					variable=self.gen_boolvar_zon[zone],
+					style = self.styles.check_buttons_framed
 				)
 				check_button.grid(row=counter, column=0, sticky="w")
 				counter += 1
 			self.gen_canvas.yview_moveto(0)
 
 		return None
+
+	def _bound_to_mousewheel(self, event):
+		if event.widget == self.load_select_frame:
+			self.load_select_frame.bind_all("<MouseWheel>", self._on_mousewheel)
+			self._inLoadFrame = True
+		if event.widget == self.gen_select_frame:
+			self.gen_select_frame.bind_all("<MouseWheel>", self._on_mousewheel)
+			self._inLoadFrame = False
+
+	def _unbound_to_mousewheel(self, event):
+		if event.widget == self.load_select_frame:
+			self.load_select_frame.unbind_all("<MouseWheel>")
+			self._inLoadFrame = bool()
+		if event.widget == self.gen_select_frame:
+			self.gen_select_frame.unbind_all("<MouseWheel>")
+			self._inLoadFrame = bool()
+
+	def _on_mousewheel(self, event):
+		if self._inLoadFrame:
+			self.load_canvas.yview_scroll(-1 * (event.delta / 120), "units")
+		else:
+			self.gen_canvas.yview_scroll(-1 * (event.delta / 120), "units")
 
 	def load_canvas_scroll_function(self, _event):
 		"""
@@ -576,8 +792,7 @@ class MainGUI:
 
 		# self.canvas.configure(
 		# 	scrollregion=self.canvas.bbox("all"), width=230, height=200, background=self.styles.bg_color_frame)
-		self.load_canvas.configure(
-			scrollregion=self.load_canvas.bbox("all"), width=230, height=200)
+		self.load_canvas.configure(scrollregion=self.load_canvas.bbox("all"), width=230, height=200)
 		return None
 
 	def gen_canvas_scroll_function(self, _event):
@@ -588,8 +803,8 @@ class MainGUI:
 
 		# self.canvas.configure(
 		# 	scrollregion=self.canvas.bbox("all"), width=230, height=200, background=self.styles.bg_color_frame)
-		self.gen_canvas.configure(
-			scrollregion=self.gen_canvas.bbox("all"), width=230, height=200)
+		self.gen_canvas.configure(scrollregion=self.gen_canvas.bbox("all"), width=230, height=200)
+
 		return None
 
 	def remove_load_bottom_selector(self):
@@ -611,9 +826,16 @@ class MainGUI:
 	def move_widgets_down(self):
 
 		master_col, master_rows, = self.master.grid_size()
-		self.cmd_scale_load_gen.grid(row=master_rows + 1, column=3)
-		self.sav_new_psse_case_button(row=master_rows + 2, column=3)
-		self.psc_info.grid(row=master_rows+2, column=0)
+		self.cmd_scale_load_gen.grid(
+			row=master_rows + 1, column=self.cmd_scale_load_gen.grid_info()['column'])
+		self.sav_new_psse_case_chkbox.grid(
+			row=master_rows + 2, column=self.sav_new_psse_case_chkbox.grid_info()['column'])
+		self.psc_info.grid(
+			row=master_rows+3, column=self.psc_info.grid_info()['column'])
+		self.hyp_user_manual.grid(
+			row=master_rows+3, column=self.hyp_user_manual.grid_info()['column'])
+		self.version_tool_lbl.grid(
+			row=master_rows+3, column=self.version_tool_lbl.grid_info()['column'])
 
 		return None
 
@@ -625,13 +847,14 @@ class MainGUI:
 		:return None:
 		"""
 		# Label for what is included in entry
-		lbl = Tk.Label(master=self.gen_labelframe, text='% of Generator Maximum Output:')
-		lbl.grid(row=row, column=col, rowspan=1, sticky=Tk.W, padx=10)
+		lbl = ttk.Label(
+			master=self.gen_labelframe, text='% of Generator Maximum Output:', style=self.styles.label_general)
+		lbl.grid(row=row, column=col, rowspan=1, sticky=Tk.W, padx=self.xpad, pady=self.ypad)
 		# Set initial value for variable
 		self.var_gen_percent.set(100.0)
 		# Add entry box
 		self.entry_gen_percent = Tk.Entry(master=self.gen_labelframe, textvariable=self.var_gen_percent)
-		self.entry_gen_percent.grid(row=row+1, column=col, sticky=Tk.W, padx=20)
+		self.entry_gen_percent.grid(row=row+1, column=col, sticky=Tk.W, padx=self.xpad, pady=self.ypad)
 		self.entry_gen_percent.config(state=Tk.DISABLED)
 		# CreateToolTip(widget=self.entry_fault_times, text=(
 		# 	'Enter the durations after the fault the current should be calculated for.\n'
@@ -724,15 +947,12 @@ class MainGUI:
 		:return: None
 		"""
 		# Create the PSC logo and a hyperlink to the website
-		# #img = Image.open(constants.GUI.local_directory + '\\PSC_logo.gif').resize((35,35), Image.ANTIALIAS)
-		# #img = Image.open(constants.GUI.img_pth).resize((35, 35), Image.ANTIALIAS)
 		img = Image.open(constants.GUI.img_pth_main)
 		img.thumbnail(constants.GUI.img_size)
 		img = ImageTk.PhotoImage(img)
-		# #self.psc_logo = Tk.Label(self.master, image=img, text = 'www.pscconsulting.com', cursor = 'hand2', justify = 'center', compound = 'top', fg = 'blue', font = 'Helvetica 7 italic')
 		self.psc_logo = Tk.Label(self.master, image=img, cursor='hand2', justify='center', compound='top')
 		self.psc_logo.photo = img
-		self.psc_logo.grid(row=row, column=col, columnspan=3, rowspan=3)
+		self.psc_logo.grid(row=row, column=col, columnspan=3, rowspan=3, pady=self.ypad)
 		self.psc_logo.bind('<Button - 1>', lambda e: webbrowser.open_new('https://www.pscconsulting.com/'))
 		return None
 
@@ -745,10 +965,10 @@ class MainGUI:
 		"""
 		# Create the PSC company info and contact details
 		self.psc_info = Tk.Label(
-			self.master, text=constants.GUI.psc_phone, justify='center', font=constants.GUI.psc_font,
-			foreground=constants.GUI.psc_color_grey
+			self.master, text=constants.GUI.psc_phone, justify='left', font=constants.GUI.psc_font,
+			foreground=constants.GUI.psc_color_grey, background=constants.GUIDefaultValues.color_main_window
 		)
-		self.psc_info.grid(row=row, column=col, columnspan=2)
+		self.psc_info.grid(row=row, column=col, columnspan=1)
 		return None
 
 	def add_sep(self, row, col_span):
@@ -760,7 +980,7 @@ class MainGUI:
 		"""
 		# Add separator
 		sep = ttk.Separator(self.master, orient="horizontal")
-		sep.grid(row=row, sticky=Tk.W + Tk.E, columnspan=col_span, pady=5)
+		sep.grid(row=row, sticky=Tk.W + Tk.E, columnspan=col_span, pady=self.ypad)
 		return None
 
 	def select_sav_case(self):
