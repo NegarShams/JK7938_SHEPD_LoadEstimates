@@ -87,7 +87,8 @@ class CustomStyles:
 		# Tidy up the repeat ttk.Style() calls
 		# Switch to a different theme
 		styles = ttk.Style()
-		styles.theme_use('xpnative')
+		# styles.theme_use('xpnative')
+		styles.theme_use('clam')
 
 		# Configure the same font in all labels
 		standard_font = constants.GUIDefaultValues.font_family
