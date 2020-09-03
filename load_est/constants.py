@@ -200,8 +200,8 @@ class GUIDefaultValues:
 	psc_color_grey = '#%02x%02x%02x' % (89, 89, 89)
 
 	# Set to WPD green
-	# color_main_window = '#%02x%02x%02x' % (222, 235, 247)
-	color_main_window = '#%02x%02x%02x' % (0, 176, 80)
+	color_main_window = '#%02x%02x%02x' % (222, 235, 247)
+	# color_main_window = '#%02x%02x%02x' % (0, 176, 80)
 	color_frame = 'white'
 	color_scrollbar = 'light grey'
 	color_pop_up_window = 'light grey'

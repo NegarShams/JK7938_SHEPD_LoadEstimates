@@ -139,7 +139,7 @@ class CustomStyles:
 		s.configure(self.frame_outer, bd=1, background=self.bg_color_frame)
 
 		# configure label frame
-		s.configure(self.lbl_frame, font=('courier', 15, 'bold'), foreground='blue', background='red')
+		s.configure(self.lbl_frame, font=('courier', 15, 'bold'), foreground='blue', background=bg_color)
 
 
 class MainGUI:
@@ -470,12 +470,12 @@ class MainGUI:
 			var.set(list[0])
 			# Create the drop down list to be shown in the GUI
 			w = ttk.OptionMenu(self.master, var, list[0], *list, style=self.styles.rating_options)
-			w.grid(row=row, column=col, columnspan=1, padx=self.xpad, pady=self.ypad)
+			w.grid(row=row, column=col, columnspan=1, padx=self.xpad, pady=self.ypad, sticky=Tk.W+Tk.E)
 		else:
 			var.set(list[0])
 			# Create the drop down list to be shown in the GUI
 			w = ttk.OptionMenu(location, var, list[0], *list, style=self.styles.rating_options)
-			w.grid(row=row, column=col, columnspan=1, padx=self.xpad, pady=self.ypad)
+			w.grid(row=row, column=col, columnspan=1, padx=self.xpad, pady=self.ypad, sticky=Tk.W+Tk.E)
 
 		return w
 
@@ -514,13 +514,13 @@ class MainGUI:
 		# Create user manual link and reference to the version of the tool
 		self.hyp_user_manual = ttk.Label(
 			self.master, text="User Guide", cursor="hand2", style=self.styles.label_hyperlink)
-		self.hyp_user_manual.grid(row=row, column=col, sticky="se", padx=self.xpad, pady=self.ypad)
+		self.hyp_user_manual.grid(row=row, column=col, sticky="se", padx=self.xpad)
 		# self.hyp_user_manual.bind('<Button - 1>', lambda e: webbrowser.open_new(
 		# 	os.path.join(local_directory, 'JK7261-GUI-02 User Guide.pdf')))
 		self.hyp_user_manual.bind('<Button - 1>', lambda e: webbrowser.open_new('https://www.pscconsulting.com/'))
 		self.version_tool_lbl = ttk.Label(
-			self.master, text='V00.001', style=self.styles.label_version_number)
-		self.version_tool_lbl.grid(row=row, column=col-1, sticky="se", padx=self.xpad, pady=self.ypad)
+			self.master, text='Version 0.1', style=self.styles.label_version_number)
+		self.version_tool_lbl.grid(row=row, column=col-1, sticky="se", padx=self.xpad)
 		CreateToolTip(widget=self.hyp_user_manual, text=(
 			"Open the GUI user guide"
 		))
