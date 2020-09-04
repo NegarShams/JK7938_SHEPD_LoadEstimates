@@ -87,7 +87,7 @@ class CustomStyles:
 		# Tidy up the repeat ttk.Style() calls
 		# Switch to a different theme
 		styles = ttk.Style()
-		styles.theme_use('xpnative')
+		styles.theme_use('winnative')
 
 		# Configure the same font in all labels
 		standard_font = constants.GUIDefaultValues.font_family
@@ -368,7 +368,7 @@ class MainGUI:
 		# grey out text initially
 		self.year_om_lbl.configure(foreground='grey')
 
-		self.year_om = self.add_drop_down(
+		self.year_om = self.add_combobox(
 			row=self.row(),
 			col=self.col(1),
 			var=self.year_selected,
@@ -389,7 +389,7 @@ class MainGUI:
 		# grey out text initially
 		self.season_om_lbl.configure(foreground='grey')
 
-		self.season_om = self.add_drop_down(
+		self.season_om = self.add_combobox(
 			row=self.row(), col=self.col(1),
 			var=self.season_selected,
 			list=self.season_list,
@@ -456,7 +456,7 @@ class MainGUI:
 		self._col += i
 		return self._col
 
-	def add_drop_down(self, row, col, var, list, location=None):
+	def add_combobox(self, row, col, var, list, location=None):
 		"""
 			Function to all a list of optimisation options which will become enabled if the user selects to run a
 			virtual statcom study
@@ -465,17 +465,41 @@ class MainGUI:
 		:rtype Tk.OptionMenu
 		:return dropdown_optimisaiton_option:
 		"""
+
 		# Check whether there is a successfully loaded SAV case to enable the list option
 		if location is None:
 			var.set(list[0])
 			# Create the drop down list to be shown in the GUI
-			w = ttk.OptionMenu(self.master, var, list[0], *list, style=self.styles.rating_options)
-			w.grid(row=row, column=col, columnspan=1, padx=self.xpad, pady=self.ypad, sticky=Tk.W+Tk.E)
+			w = ttk.Combobox(
+				self.master,
+				textvariable=var,
+				values=list,
+				style=self.styles.rating_options,
+				justify=Tk.CENTER
+			)
+			w.grid(
+				row=row, column=col, columnspan=1,
+				padx=self.xpad, pady=self.ypad, sticky=Tk.W+Tk.E,
+			)
 		else:
 			var.set(list[0])
 			# Create the drop down list to be shown in the GUI
-			w = ttk.OptionMenu(location, var, list[0], *list, style=self.styles.rating_options)
-			w.grid(row=row, column=col, columnspan=1, padx=self.xpad, pady=self.ypad, sticky=Tk.W+Tk.E)
+			# w = ttk.Combobox(location, var, list[0], *list, style=self.styles.rating_options)
+			w = ttk.Combobox(
+				location,
+				textvariable=var,
+				values=list,
+				style=self.styles.rating_options,
+				justify=Tk.CENTER,
+			)
+
+			w.grid(
+				row=row, column=col, columnspan=1,
+				padx=self.xpad, pady=self.ypad, sticky=Tk.W+Tk.E,
+			)
+
+
+
 
 		return w
 
