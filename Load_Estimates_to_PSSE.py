@@ -28,9 +28,11 @@ class Station:
 		:param st_type: either 'BSP' or 'Primary'
 		"""
 
-		# reset index to be able to use iloc later
+		# reset index to ensure first row is row zero to be able to use iloc later
 		df.reset_index(drop=True, inplace=True)
+		# create a copy of the full data frame
 		self.df = df.copy()
+		# create a dataframe of the first row only
 		df_fr = df.iloc[0].copy()
 
 		# Initialise station type
@@ -47,9 +49,9 @@ class Station:
 		# Initialise nrn col dictionary
 		self.nrn = {df_fr.index[Constants.nrn_col_no]: df_fr.iat[Constants.nrn_col_no]}
 
-		# Initialise growth_rate col dictionary
-		self.growth_rate_key_val = df_fr.iat[Constants.growth_rate_col]
-		self.growth_rate_key = {df_fr.index[Constants.growth_rate_col]: df_fr.iat[Constants.growth_rate_col]}
+		# # Initialise growth_rate col dictionary
+		# self.growth_rate_key_val = df_fr.iat[Constants.growth_rate_col]
+		# self.growth_rate_key = {df_fr.index[Constants.growth_rate_col]: df_fr.iat[Constants.growth_rate_col]}
 
 		# Initialise peak_mw col dictionary
 		self.peak_mw_val = df_fr.iat[Constants.peak_mw_col]
@@ -58,13 +60,25 @@ class Station:
 		# Initialise power factor dictionary - default power factor of 1
 		self.set_pf(1)
 
+		self.gsp_diverse_forecast_dict = dict()
+		self.gsp_aggregate_forecast_dict = dict()
+		self.load_forecast_dict = dict()
+
 		if self.st_type == Constants.gsp_type:
 			# extract gsp power factor
 			gsp_pf = df.iat[Constants.pf_cell_tuple]
 			if not np.isnan(gsp_pf):
 				self.set_pf(gsp_pf)
 			self.gsp_scalable = True
+
+			gsp_div_agg_df = df.loc[0:1, df.columns[Constants.load_forecast_col_range]]
+			gsp_div_agg_idx = ['Diverse', 'Aggregate']
+			gsp_div_agg_df.index = gsp_div_agg_idx
+			self.gsp_diverse_forecast_dict = gsp_div_agg_df.loc['Diverse'].to_dict()
+			self.gsp_aggregate_forecast_dict = gsp_div_agg_df.loc['Aggregate'].to_dict()
+
 		else:
+			self.load_forecast_dict = df_fr.iloc[Constants.load_forecast_col_range].to_dict()
 			self.idv_scalable = True
 			self.gsp_percentage = float
 
@@ -156,7 +170,9 @@ class Station:
 			pd.DataFrame([self.name]),
 			pd.DataFrame([self.peak_mw_dict]),
 			pd.DataFrame([self.pf]),
-			pd.DataFrame([self.growth_rate_key]),
+			pd.DataFrame([self.gsp_diverse_forecast_dict]),
+			pd.DataFrame([self.gsp_aggregate_forecast_dict]),
+			pd.DataFrame([self.load_forecast_dict]),
 			pd.DataFrame([psse_buses_check_dict])],
 			axis=1,
 		)
@@ -210,7 +226,7 @@ class Station:
 		:return pd.Dataframe: row dataframe of station object
 		"""
 
-		# create temp dict to have just bus numbers not percentages also
+		# create check dict to have just bus numbers not percentages also
 		psse_buses_check_dict = dict()
 		for key, sub_dict in self.psse_buses_dict.iteritems():
 			psse_buses_check_dict[key] = sub_dict['bus_no']
@@ -238,11 +254,11 @@ class Station:
 		df.loc[df[df[col_select].le(0).any(1)].index, col_name] = False
 		df.loc[df[df[col_select].isnull().any(1)].index, col_name] = False
 
-		# check growth_rate_key is in the growth rate dict
-		col_select = self.growth_rate_key.keys()
-		col_name = 'growth_rate_key' + '_pass'
-		check_cols.append(col_name)
-		df.loc[:, col_name] = True
+		# # check growth_rate_key is in the growth rate dict
+		# col_select = self.growth_rate_key.keys()
+		# col_name = 'growth_rate_key' + '_pass'
+		# check_cols.append(col_name)
+		# df.loc[:, col_name] = True
 
 		if self.st_type == Constants.primary_type:
 			growth_str_list = Constants.growth_rate_dict.keys()
@@ -416,6 +432,7 @@ def create_stations(df_dict):
 	for name, net in df_dict.iteritems():
 		logger.info('Processing: ' + name)
 
+		# extract GSP rows as individual dataframe
 		gsp_idx = net[net[Constants.gsp_type] == name].index.item()
 		gsp_df = net.iloc[gsp_idx:gsp_idx + Constants.bsp_no_rows]
 
@@ -634,7 +651,11 @@ if __name__ == '__main__':
 	# init_psse = psse.InitialisePsspy()
 	# init_psse.initialise_psse()
 
-	gui = load_est.gui.MainGUI()
+	# gui = load_est.gui.MainGUI()
+
+	process_load_estimates_xl()
+
+	print('finished')
 
 
 
