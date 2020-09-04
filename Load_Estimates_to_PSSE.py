@@ -71,20 +71,21 @@ class Station:
 				self.set_pf(gsp_pf)
 			self.gsp_scalable = True
 
-			gsp_div_agg_df = df.loc[0:1, df.columns[Constants.load_forecast_col_range]]
-			gsp_div_agg_idx = ['Diverse', 'Aggregate']
-			gsp_div_agg_df.index = gsp_div_agg_idx
-			self.gsp_diverse_forecast_dict = gsp_div_agg_df.loc['Diverse'].to_dict()
-			self.gsp_aggregate_forecast_dict = gsp_div_agg_df.loc['Aggregate'].to_dict()
+			# gsp_div_agg_df = df.loc[0:1, df.columns[Constants.load_forecast_col_range]]
+			# gsp_div_agg_idx = ['Diverse', 'Aggregate']
+			# gsp_div_agg_df.index = gsp_div_agg_idx
+			# self.gsp_diverse_forecast_dict = gsp_div_agg_df.loc['Diverse'].to_dict()
+			# self.gsp_aggregate_forecast_dict = gsp_div_agg_df.loc['Aggregate'].to_dict()
 
 		else:
-			self.load_forecast_dict = df_fr.iloc[Constants.load_forecast_col_range].to_dict()
+
 			self.idv_scalable = True
-			self.gsp_percentage = float
+			self.load_percentage = float
 
 		# Initialise name of upstream station as empty dictionary
 		self.name_up = dict()
 
+		self.load_forecast_dict = df_fr.iloc[Constants.load_forecast_col_range].to_dict()
 		self.seasonal_percent_dict = df_fr.iloc[Constants.seasonal_percent_col_range].to_dict()
 		self.seasonal_percent_dict['Maximum Demand'] = 1
 
@@ -97,7 +98,6 @@ class Station:
 		self.sub_stations_dict = dict()
 		self.no_sub_stations = len(self.sub_stations_dict)
 
-		self.load_forecast_dict = dict()
 		self.load_forecast_diverse_fac = float
 
 	def set_pf(self, pf):
@@ -127,7 +127,7 @@ class Station:
 
 		return
 
-	def calc_forecast_loads(self):
+	def calc_load_percentages(self):
 
 		year_list = self.df.columns[Constants.load_forecast_col_range].to_list()
 		year_list.sort()
@@ -135,9 +135,9 @@ class Station:
 		peak_mw_df = pd.DataFrame(columns=year_list)
 
 		for key, prim_stat in self.sub_stations_dict.iteritems():
-			for counter, yr in enumerate(year_list):
-				prim_stat.load_forecast_dict[yr] = \
-					prim_stat.peak_mw_val * Constants.growth_rate_dict[prim_stat.growth_rate_key_val] ** counter
+			# for counter, yr in enumerate(year_list):
+			# 	prim_stat.load_forecast_dict[yr] = \
+			# 		prim_stat.peak_mw_val * Constants.growth_rate_dict[prim_stat.growth_rate_key_val] ** counter
 
 			temp_df = pd.DataFrame([prim_stat.load_forecast_dict])
 			temp_df.index = [prim_stat.name_val]
@@ -151,12 +151,12 @@ class Station:
 
 		for key, prim_stat in self.sub_stations_dict.iteritems():
 
-			prim_stat.gsp_percentage = peak_mw_df.loc[prim_stat.name_val, year_list[0]].item() / \
+			prim_stat.load_percentage = peak_mw_df.loc[prim_stat.name_val, year_list[0]].item() / \
 				peak_mw_df.loc['Column_Total', year_list[0]].item()
 
-		return
+		return None
 
-	def gsp_scalable_check(self):
+	def scalable_indv_check(self):
 
 		# create temp dict to have just bus numbers not percentages also
 		psse_buses_check_dict = dict()
@@ -170,8 +170,6 @@ class Station:
 			pd.DataFrame([self.name]),
 			pd.DataFrame([self.peak_mw_dict]),
 			pd.DataFrame([self.pf]),
-			pd.DataFrame([self.gsp_diverse_forecast_dict]),
-			pd.DataFrame([self.gsp_aggregate_forecast_dict]),
 			pd.DataFrame([self.load_forecast_dict]),
 			pd.DataFrame([psse_buses_check_dict])],
 			axis=1,
@@ -187,20 +185,13 @@ class Station:
 		df.loc[df[df[col_select].le(0).any(1)].index, col_name] = False
 		df.loc[df[df[col_select].isnull().any(1)].index, col_name] = False
 
-		# todo check if primary whether valid key for growth.
-
-		# check load_forecast_dict is not null or zero
-		col_select = self.growth_rate_key.keys()
-		col_name = 'growth_rate_key' + '_pass'
+		# check load_forecast_dict is not null or negative
+		col_select = self.load_forecast_dict.keys()
+		col_name = 'load_forecast' + '_pass'
 		check_cols.append(col_name)
-
 		df.loc[:, col_name] = True
-
-		if self.st_type == Constants.primary_type:
-			growth_str_list = Constants.growth_rate_dict.keys()
-
-			if not df.loc[0, col_select].item() in growth_str_list:
-				df.loc[:, col_name] = False
+		df.loc[df[df[col_select].le(0).any(1)].index, col_name] = False
+		df.loc[df[df[col_select].isnull().any(1)].index, col_name] = False
 
 		# check all psse_buses_dict are not null
 		col_select = psse_buses_check_dict.keys()
@@ -222,11 +213,17 @@ class Station:
 
 	def station_check(self):
 		"""
-		Function to return a row dataframe for a station object
+		Function to return a row dataframe for a station object with new columns to check:
+		- MW Peak is a number greater than zero
+		- Each years load forecast is not null or negative
+		- Each seasonal percentage is not null, negative or greater than 100%
+		- That at least one PSSE bus exists for the load
+		A final check column is added to check all above checks have been met
 		:return pd.Dataframe: row dataframe of station object
 		"""
 
-		# create check dict to have just bus numbers not percentages also
+		# create check dict to have just bus numbers not percentages
+		# todo (percentage values are checked when applying load scaling)
 		psse_buses_check_dict = dict()
 		for key, sub_dict in self.psse_buses_dict.iteritems():
 			psse_buses_check_dict[key] = sub_dict['bus_no']
@@ -238,12 +235,13 @@ class Station:
 			pd.DataFrame([self.name]),
 			pd.DataFrame([self.peak_mw_dict]),
 			pd.DataFrame([self.pf]),
-			pd.DataFrame([self.growth_rate_key]),
+			pd.DataFrame([self.load_forecast_dict]),
 			pd.DataFrame([self.seasonal_percent_dict]),
 			pd.DataFrame([psse_buses_check_dict])],
 			axis=1,
 		)
 
+		# initialise a list to store the new check columns names
 		check_cols = list()
 
 		# check that MW Peak is a number greater than zero
@@ -254,19 +252,15 @@ class Station:
 		df.loc[df[df[col_select].le(0).any(1)].index, col_name] = False
 		df.loc[df[df[col_select].isnull().any(1)].index, col_name] = False
 
-		# # check growth_rate_key is in the growth rate dict
-		# col_select = self.growth_rate_key.keys()
-		# col_name = 'growth_rate_key' + '_pass'
-		# check_cols.append(col_name)
-		# df.loc[:, col_name] = True
+		# check load_forecast_dict is not null or negative
+		col_select = self.load_forecast_dict.keys()
+		col_name = 'load_forecast' + '_pass'
+		check_cols.append(col_name)
+		df.loc[:, col_name] = True
+		df.loc[df[df[col_select].le(0).any(1)].index, col_name] = False
+		df.loc[df[df[col_select].isnull().any(1)].index, col_name] = False
 
-		if self.st_type == Constants.primary_type:
-			growth_str_list = Constants.growth_rate_dict.keys()
-
-			if not df.loc[0, col_select].item() in growth_str_list:
-				df.loc[:, col_name] = False
-
-		# check seasonal_percent_dict is not null, zero or greater than 1
+		# check seasonal_percent is not null, negative or greater than 1
 		col_select = self.seasonal_percent_dict.keys()
 		col_name = 'seasonal_percent' + '_pass'
 		check_cols.append(col_name)
@@ -303,7 +297,7 @@ class Station:
 
 class Constants:
 
-	DEBUG = 0
+	DEBUG = 1
 
 	dill_file_name = 'station_dict.pkl'
 
@@ -430,7 +424,9 @@ def create_stations(df_dict):
 	st_dict = collections.OrderedDict()
 
 	for name, net in df_dict.iteritems():
-		logger.info('Processing: ' + name)
+		# todo why is the
+		# logger.info('Processing: ' + name)
+		print('Processing: ' + name)
 
 		# extract GSP rows as individual dataframe
 		gsp_idx = net[net[Constants.gsp_type] == name].index.item()
@@ -455,7 +451,7 @@ def create_stations(df_dict):
 				if prim_station.station_check():
 					gsp_station.add_sub_station(prim_station)
 				# if primary passes gsp scalable check add to GSP
-				elif prim_station.gsp_scalable_check():
+				elif prim_station.scalable_indv_check():
 					gsp_station.add_sub_station(prim_station)
 					prim_station.idv_scalable = False
 				# else do not add the primary station to the gsp
@@ -463,8 +459,9 @@ def create_stations(df_dict):
 					gsp_station.gsp_scalable = False
 					del prim_station
 
-			# calculate forecast loads
-			gsp_station.calc_forecast_loads()
+			if gsp_station.gsp_scalable:
+				# If the GSP is scalable ie all primaries pass checks - calculate forecast loads
+				gsp_station.calc_load_percentages()
 
 			# finally add station to station dictionary
 			st_dict.update({len(st_dict.keys()): gsp_station})
@@ -581,23 +578,25 @@ def set_growth_const(df):
 	return None
 
 
-def process_load_estimates_xl():
+def process_load_estimates_xl(xl_path):
 
 	cur_path = os.path.dirname(__file__)
 	example_folder = r'load_est\test_files'
 
 	# workbook to open
-	excel_filename = r'2019-20 SHEPD Load Estimates - v4.xlsx'
+	# excel_filename = r'2019-20 SHEPD Load Estimates - v4.xlsx'
+	excel_filename = os.path.basename(xl_path)
 	# worksheet to open
 	excel_ws_name = 'MASTER Based on SubstationLoad'
 	excel_ws_name_growth = 'Growth Rates'
-	file_path = os.path.join(cur_path, example_folder, excel_filename)
+	# file_path = os.path.join(cur_path, example_folder, excel_filename)
+	# file_path = xl_fn
 	# load worksheet into dataframe
-	raw_dataframe = sse_load_xl_to_df(file_path, excel_ws_name)
-	growth_dataframe = sse_load_xl_to_df(file_path, excel_ws_name_growth, headers=False)
+	raw_dataframe = sse_load_xl_to_df(xl_path, excel_ws_name)
+	# growth_dataframe = sse_load_xl_to_df(xl_path, excel_ws_name_growth, headers=False)
 
-	set_growth_const(growth_dataframe)
-
+	# set_growth_const(growth_dataframe)
+	#
 	# extract individual BSPs
 	network_df_dict = extract_bsp_dfs(raw_dataframe)
 
@@ -618,9 +617,28 @@ def process_load_estimates_xl():
 			worksheet1.set_tab_color('red')
 
 	# todo use a constant to save filename
+	params_dict = dict()
+	params_dict['station_dict'] = station_dict
 
-	with open(os.path.join(cur_path, example_folder, "dict.pkl"), 'wb') as f:
-		dill.dump(station_dict, f)
+	if Constants.bad_data.empty:
+		params_dict['loads_complete_dict'] = {excel_filename: True}
+	else:
+		params_dict['loads_complete_dict'] = {excel_filename: False}
+
+	params_dict['years_list'] = station_dict[0].load_forecast_dict.keys()
+	params_dict['demand_scaling_list'] = station_dict[0].seasonal_percent_dict.keys()
+
+	temp_list = list()
+	for key, gsp in station_dict.iteritems():
+		if gsp.gsp_scalable:
+			temp_list.append(gsp.gsp)
+	params_dict['gsp_scaling list'] = temp_list
+
+	with open(os.path.join(cur_path, example_folder, "params.pkl"), 'wb') as f:
+		dill.dump(params_dict, f)
+
+	constants.General.params_dict = params_dict
+	# todo load params.pkl
 
 
 if __name__ == '__main__':
@@ -648,12 +666,24 @@ if __name__ == '__main__':
 	psse_con = load_est.psse.PsseControl()
 	logger.log_colouring(run_in_psse=psse_con.run_in_psse)
 
+	cur_path = os.path.dirname(__file__)
+	example_folder = r'load_est\test_files'
+
+	# todo load params.pkl
+	try:
+		with open(os.path.join(cur_path, example_folder, "station_dict.pkl"), 'rb') as f:
+			constants.General.station_dict = dill.load(f)
+		with open(os.path.join(cur_path, example_folder, "loads_complete_dict.pkl"), 'rb') as f:
+			constants.General.loads_complete_dict = dill.load(f)
+	except:
+			pass
+
 	# init_psse = psse.InitialisePsspy()
 	# init_psse.initialise_psse()
 
-	# gui = load_est.gui.MainGUI()
+	gui = load_est.gui.MainGUI()
 
-	process_load_estimates_xl()
+	# process_load_estimates_xl()
 
 	print('finished')
 

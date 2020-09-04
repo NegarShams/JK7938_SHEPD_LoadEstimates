@@ -245,13 +245,40 @@ class MainGUI:
 		self.add_psc_logo(row=self.row(), col=0)
 
 		self.cmd_import_load_estimates = self.add_cmd_button(
-			label='Import SSE Load Estimates .xlsx', cmd=self.import_load_estimates, row=self.row(), col=3)
+			label='Import SSE Load Estimates .xlsx', cmd=self.import_load_estimates_xl, row=self.row(), col=3)
+
+		self.current_xl_lbl = ttk.Label(self.master, text='Current File Loaded:', style=self.styles.label_general)
+		self.current_xl_lbl.grid(row=self.row(1), column=3)
+
+		if constants.General.loads_complete_dict:
+			xl_lbl = constants.General.loads_complete_dict.keys()[0]
+			com_lbl = constants.General.loads_complete_dict.values()[0]
+			sav_case_status = Tk.NORMAL
+			if constants.General.loads_complete_dict.values()[0]:
+				lbl_color = 'green'
+			else:
+				lbl_color = 'red'
+		else:
+			xl_lbl = 'N/A'
+			com_lbl = 'N/A'
+			sav_case_status = Tk.DISABLED
+		# todo load in from complete_dict pkl
+		self.current_xl_path_lbl = ttk.Label(self.master, text=xl_lbl, style=self.styles.label_general)
+		self.current_xl_path_lbl.grid(row=self.row(), column=4)
+
+		self.load_complete_lbl = ttk.Label(self.master, text='All loads error free:', style=self.styles.label_general)
+		self.load_complete_lbl.grid(row=self.row(1), column=3)
+		# todo load in from complete_dict pkl
+		self.load_complete_lbl_t_f = ttk.Label(
+			self.master, text=str(com_lbl), style=self.styles.label_general, foreground=lbl_color)
+		self.load_complete_lbl_t_f.grid(row=self.row(), column=4)
 
 		# Add PSC logo with hyperlink to the website
-		self.add_psc_logo(row=self.row(), col=5)
+		self.add_psc_logo(row=0, col=5)
 
 		# SAV case to be run on
 		self.sav_case = str()
+		self.load_estimates_xl = str()
 
 		# Determine label for button based on the SAV case being loaded
 		if self.sav_case:
@@ -261,6 +288,7 @@ class MainGUI:
 
 		self.cmd_select_sav_case = self.add_cmd_button(
 			label=lbl_sav_button, cmd=self.select_sav_case,  row=self.row(1), col=3)
+		self.cmd_select_sav_case.configure(state=sav_case_status)
 
 		self.add_sep(row=4, col_span=8)
 
@@ -498,9 +526,6 @@ class MainGUI:
 				padx=self.xpad, pady=self.ypad, sticky=Tk.W+Tk.E,
 			)
 
-
-
-
 		return w
 
 	def add_cmd_button(self, label, cmd, row, col, location=None):
@@ -554,10 +579,6 @@ class MainGUI:
 		return None
 
 	def scale_loads(self):
-
-		return
-
-	def import_load_estimates(self):
 
 		return
 
@@ -1025,11 +1046,38 @@ class MainGUI:
 
 		# Update command and radio button status
 		self.cmd_select_sav_case.config(text=lbl_sav_button)
-		# self.year_om.config(state=Tk.NORMAL)
-		# self.season_om.config(state=Tk.NORMAL)
 		self.enable_radio_buttons(self.load_radio_btn_list)
 		self.enable_radio_buttons(self.gen_radio_btn_list)
 		self.cmd_scale_load_gen.configure(state=Tk.NORMAL)
+
+		return None
+
+	def import_load_estimates_xl(self):
+		"""
+			Function to allow the user to select the SAV case to run
+		:return: None
+		"""
+		# Ask user to select file(s) or folders based on <.bo_files>
+		file_path = tkFileDialog.askopenfilename(
+			initialdir=self.results_pth,
+			filetypes=constants.General.file_types,
+			title='Select SSE Load Estimates Spreadsheet'
+		)
+
+		# set load estimates to file path
+		self.load_estimates_xl = file_path
+
+		# process excel file
+		Load_Estimates_to_PSSE.process_load_estimates_xl(self.load_estimates_xl)
+
+		# Update command and radio button status
+		self.cmd_select_sav_case.configure(state=Tk.NORMAL)
+		self.current_xl_path_lbl.configure(text=constants.General.loads_complete_dict.keys()[0])
+		self.load_complete_lbl_t_f.configure(text=str(constants.General.loads_complete_dict.values()[0]))
+		if constants.General.loads_complete_dict.values()[0]:
+			self.load_complete_lbl_t_f.configure(foreground='green')
+		else:
+			self.load_complete_lbl_t_f.configure(foreground='red')
 
 		return None
 

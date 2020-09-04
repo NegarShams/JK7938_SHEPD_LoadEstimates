@@ -24,6 +24,10 @@ class General:
 	"""
 		General constants
 	"""
+
+	# station_dict = dict()
+	# loads_complete_dict = dict()
+	params_dict = dict()
 	ext_csv = '.csv'
 	node_label = 'Node Details'
 	bus_name = 'Name'
