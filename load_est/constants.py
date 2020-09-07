@@ -25,9 +25,14 @@ class General:
 		General constants
 	"""
 
-	# station_dict = dict()
-	# loads_complete_dict = dict()
 	params_dict = dict()
+	scalable_GSP_list = list()
+	years_list = list()
+	demand_scaling_list = list()
+	station_dict = dict()
+	loads_complete = bool()
+	xl_file_name = str()
+
 	ext_csv = '.csv'
 	node_label = 'Node Details'
 	bus_name = 'Name'
@@ -47,13 +52,47 @@ class General:
 		pass
 
 
+class SavedParamsStrings:
+
+	params_file_name = 'SSE_LE_params.pkl'
+
+	scalable_GSP_list_str = 'scalable_GSP_list'
+	years_list_str = 'years_list'
+	demand_scaling_list_str = 'demand_scaling_list'
+	station_dict_str = 'station_dict'
+	loads_complete_str = 'loads_complete'
+	xl_file_name_str = 'xl_file_name'
+
+	def __init__(self):
+		"""
+			Just to avoid error message
+		"""
+		pass
+
+
+class Zones:
+	zone_num = 'NUMBER'
+	zone_name = 'ZONENAME'
+	load_p = 'PLOAD'
+	load_q = 'QLOAD'
+	gen_p = 'PGEN'
+	gen_q = 'QGEN'
+	gen_p_controlled = 'PGEN_CONTROLLED'
+	gen_p_other = 'PGEN_OTHER'
+	gen_q_controlled = 'QGEN_CONTROLLED'
+	gen_q_other = 'QGEN_OTHER'
+
+	def __init__(self):
+		pass
+
+
 class GUI:
 	"""
 		Constants for the user interface
 	"""
-	year_list = [datetime.datetime.now().year, datetime.datetime.now().year + 1, datetime.datetime.now().year+2]
-	season_list = ['Maximum Demand', 'Minimum Demand']
-	station_dict = dict()
+	# year_list = [datetime.datetime.now().year, datetime.datetime.now().year + 1, datetime.datetime.now().year+2]
+	# season_list = ['Maximum Demand', 'Minimum Demand']
+	# station_dict = dict()
 
 	gui_name = 'PSC Load Estimates Tool'
 	# 0.00 and 0.01 removed since these fault times will be added anyway

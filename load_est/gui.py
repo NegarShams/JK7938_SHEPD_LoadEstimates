@@ -16,12 +16,13 @@ import tkMessageBox
 import os
 import logging
 import math
+import datetime
 import webbrowser
 from PIL import Image, ImageTk
 from collections import OrderedDict
 
 # Package specific imports
-import load_est
+import load_est.psse as psse
 import load_est.constants as constants
 import Load_Estimates_to_PSSE
 
@@ -208,19 +209,19 @@ class MainGUI:
 
 		# year drop down options
 		self.year_selected = Tk.StringVar()
-		if bool(station_dict):
-			constants.GUI.year_list = sorted(station_dict[0].load_forecast_dict.keys())
-			constants.GUI.season_list = sorted(station_dict[0].seasonal_percent_dict.keys())
-			# constants.GUI.station_dict = station_dict
-		self.year_list = constants.GUI.year_list
+		# if bool(station_dict):
+		# 	constants.GUI.year_list = sorted(station_dict[0].load_forecast_dict.keys())
+		# 	constants.GUI.season_list = sorted(station_dict[0].seasonal_percent_dict.keys())
+		# 	# constants.GUI.station_dict = station_dict
+		self.year_list = constants.General.years_list
 		self.year_om = None
 		self.year_om_lbl = ttk.Label()
 
 		# season drop down options
-		self.season_selected = Tk.StringVar()
-		self.season_list = constants.GUI.season_list
-		self.season_om = None
-		self.season_om_lbl = ttk.Label()
+		self.demand_scaling_selected = Tk.StringVar()
+		self.demand_scaling_list = constants.General.demand_scaling_list
+		self.demand_scaling_om = None
+		self.demand_scaling_om_lbl = ttk.Label()
 
 		# Load Selector scroll constants
 		self.load_side_lbl = ttk.Label()
@@ -230,16 +231,17 @@ class MainGUI:
 		self.load_scrollbar = ttk.Scrollbar()
 		# Load selector zone constants
 		self.load_boolvar_zon = dict()
-		self.zones = dict()
+		self.zone_data = None
+		self.zone_dict = dict()
 		# todo just for testing to set a zone dict, set equal to constant
-		for i in range(13):
-			self.zones[i] = "zone " + str(i)
+		# for i in range(13):
+		# 	self.zones[i] = "zone " + str(i)
 		# Load selector gsp constants
 		self.load_boolvar_gsp = dict()
-		self.load_gsps = dict()
-		# todo just for testing to set a gsp dict, set equal to constant
-		for i in range(28):
-			self.load_gsps[i] = "gsp " + str(i)
+		self.load_gsps = constants.General.scalable_GSP_list
+		# # todo just for testing to set a gsp dict, set equal to constant
+		# for i in range(28):
+		# 	self.load_gsps[i] = "gsp " + str(i)
 
 		# Add PSC logo with hyperlink to the website
 		self.add_psc_logo(row=self.row(), col=0)
@@ -250,24 +252,27 @@ class MainGUI:
 		self.current_xl_lbl = ttk.Label(self.master, text='Current File Loaded:', style=self.styles.label_general)
 		self.current_xl_lbl.grid(row=self.row(1), column=3)
 
-		if constants.General.loads_complete_dict:
-			xl_lbl = constants.General.loads_complete_dict.keys()[0]
-			com_lbl = constants.General.loads_complete_dict.values()[0]
+		if constants.General.params_dict:
+			xl_lbl = constants.General.xl_file_name
+			com_lbl = constants.General.loads_complete
 			sav_case_status = Tk.NORMAL
-			if constants.General.loads_complete_dict.values()[0]:
+			if com_lbl:
 				lbl_color = 'green'
 			else:
 				lbl_color = 'red'
 		else:
 			xl_lbl = 'N/A'
 			com_lbl = 'N/A'
+			lbl_color = 'black'
 			sav_case_status = Tk.DISABLED
+
 		# todo load in from complete_dict pkl
 		self.current_xl_path_lbl = ttk.Label(self.master, text=xl_lbl, style=self.styles.label_general)
 		self.current_xl_path_lbl.grid(row=self.row(), column=4)
 
 		self.load_complete_lbl = ttk.Label(self.master, text='All loads error free:', style=self.styles.label_general)
 		self.load_complete_lbl.grid(row=self.row(1), column=3)
+
 		# todo load in from complete_dict pkl
 		self.load_complete_lbl_t_f = ttk.Label(
 			self.master, text=str(com_lbl), style=self.styles.label_general, foreground=lbl_color)
@@ -278,6 +283,7 @@ class MainGUI:
 
 		# SAV case to be run on
 		self.sav_case = str()
+		self.psse_case = None
 		self.load_estimates_xl = str()
 
 		# Determine label for button based on the SAV case being loaded
@@ -388,7 +394,11 @@ class MainGUI:
 
 		# add drop down list for year
 		self.year_selected = Tk.StringVar(self.master)
-		self.year_list = constants.GUI.year_list
+		if constants.General.years_list:
+			self.year_list = constants.General.years_list
+		else:
+			self.year_list = [datetime.datetime.now().year]
+
 		self.year_selected.set(self.year_list[0])
 
 		self.year_om_lbl = ttk.Label(master=self.load_labelframe, text='Year: ', style=self.styles.label_general)
@@ -407,23 +417,26 @@ class MainGUI:
 
 		self._col = 0
 		# add drop down list for season
-		self.season_selected = Tk.StringVar(self.master)
-		self.season_list = constants.GUI.season_list
-		self.season_selected.set(self.season_list[0])
+		self.demand_scaling_selected = Tk.StringVar(self.master)
+		if constants.General.demand_scaling_list:
+			self.demand_scaling_list = constants.General.demand_scaling_list
+		else:
+			self.demand_scaling_list = ['Maximum Demand']
+		self.demand_scaling_selected.set(self.demand_scaling_list[0])
 
-		self.season_om_lbl = ttk.Label(
+		self.demand_scaling_om_lbl = ttk.Label(
 			master=self.load_labelframe, text='Demand Scaling: ', style=self.styles.label_general)
-		self.season_om_lbl.grid(row=self.row(1), column=self.col(), rowspan=1, sticky=Tk.E, padx=self.xpad)
+		self.demand_scaling_om_lbl.grid(row=self.row(1), column=self.col(), rowspan=1, sticky=Tk.E, padx=self.xpad)
 		# grey out text initially
-		self.season_om_lbl.configure(foreground='grey')
+		self.demand_scaling_om_lbl.configure(foreground='grey')
 
-		self.season_om = self.add_combobox(
+		self.demand_scaling_om = self.add_combobox(
 			row=self.row(), col=self.col(1),
-			var=self.season_selected,
-			list=self.season_list,
+			var=self.demand_scaling_selected,
+			list=self.demand_scaling_list,
 			location=self.load_labelframe
 		)
-		self.season_om.configure(state=Tk.DISABLED)
+		self.demand_scaling_om.configure(state=Tk.DISABLED)
 
 		return None
 
@@ -593,8 +606,8 @@ class MainGUI:
 			# disable year and seasons drop downs and labels
 			self.year_om.config(state=Tk.DISABLED)
 			self.year_om_lbl.config(foreground='grey')
-			self.season_om.config(state=Tk.DISABLED)
-			self.season_om_lbl.config(foreground='grey')
+			self.demand_scaling_om.config(state=Tk.DISABLED)
+			self.demand_scaling_om_lbl.config(foreground='grey')
 			# remove the bottom load selector
 			self.remove_load_bottom_selector()
 
@@ -602,8 +615,8 @@ class MainGUI:
 			# enable year and seasons drop downs and labels
 			self.year_om.config(state=Tk.NORMAL)
 			self.year_om_lbl.config(foreground='')
-			self.season_om.config(state=Tk.NORMAL)
-			self.season_om_lbl.config(foreground='')
+			self.demand_scaling_om.config(state=Tk.NORMAL)
+			self.demand_scaling_om_lbl.config(foreground='')
 			# remove the bottom load selector
 			self.remove_load_bottom_selector()
 
@@ -611,8 +624,8 @@ class MainGUI:
 			# enable year and seasons drop downs and labels
 			self.year_om.config(state=Tk.NORMAL)
 			self.year_om_lbl.config(foreground='')
-			self.season_om.config(state=Tk.NORMAL)
-			self.season_om_lbl.config(foreground='')
+			self.demand_scaling_om.config(state=Tk.NORMAL)
+			self.demand_scaling_om_lbl.config(foreground='')
 			# create load selector frame
 			self.create_load_select_frame()
 
@@ -704,7 +717,8 @@ class MainGUI:
 
 			counter = 0
 			for gsp in self.load_gsps:
-				lbl = "{}".format(self.load_gsps[gsp])
+				# lbl = "{}".format(self.load_gsps[gsp])
+				lbl = "{}".format(gsp)
 				check_button = ttk.Checkbutton(
 					self.load_entry_frame,
 					text=lbl,
@@ -717,17 +731,17 @@ class MainGUI:
 
 		if self.load_radio_opt_sel.get() == 3:
 			# 'Select Zone(s):'
-			for zone in self.zones:
-				self.load_boolvar_zon[zone] = Tk.BooleanVar()
-				self.load_boolvar_zon[zone].set(0)
+			for zone_num, zone_name in self.zone_dict.iteritems():
+				self.load_boolvar_zon[zone_num] = Tk.BooleanVar()
+				self.load_boolvar_zon[zone_num].set(0)
 
 			counter = 0
-			for zone in self.zones:
-				lbl = "{}".format(self.zones[zone])
+			for zone_num, zone_name in self.zone_dict.iteritems():
+				lbl = "{}".format(str(zone_num) + '. ' + str(zone_name))
 				check_button = ttk.Checkbutton(
 					self.load_entry_frame,
 					text=lbl,
-					variable=self.load_boolvar_zon[zone],
+					variable=self.load_boolvar_zon[zone_num],
 					style=self.styles.check_buttons_framed
 				)
 				check_button.grid(row=counter, column=0, sticky="w")
@@ -788,18 +802,18 @@ class MainGUI:
 			lbl = 'Select Zone(s):'
 			self.gen_side_lbl.config(text=lbl)
 			# 'Select Zone(s):'
-			for zone in self.zones:
-				self.gen_boolvar_zon[zone] = Tk.BooleanVar()
-				self.gen_boolvar_zon[zone].set(0)
+			for zone_num, zone_name in self.zone_dict.iteritems():
+				self.gen_boolvar_zon[zone_num] = Tk.BooleanVar()
+				self.gen_boolvar_zon[zone_num].set(0)
 
 			counter = 0
-			for zone in self.zones:
-				lbl = "{}".format(self.zones[zone])
+			for zone_num, zone_name in self.zone_dict.iteritems():
+				lbl = "{}".format(str(zone_num) + '. ' + str(zone_name))
 				check_button = ttk.Checkbutton(
 					self.gen_entry_frame,
 					text=lbl,
-					variable=self.gen_boolvar_zon[zone],
-					style = self.styles.check_buttons_framed
+					variable=self.gen_boolvar_zon[zone_num],
+					style=self.styles.check_buttons_framed
 				)
 				check_button.grid(row=counter, column=0, sticky="w")
 				counter += 1
@@ -1040,15 +1054,26 @@ class MainGUI:
 			title='Select SAV case for fault studies'
 		)
 
-		# Import busbar list from file assuming it is first column and append to existing list
-		self.sav_case = file_path
-		lbl_sav_button = 'SAV case = {}'.format(os.path.basename(self.sav_case))
+		# only do something if a file path was selected, if used selected cancel nothing will happen.
+		if file_path:
+			# Import busbar list from file assuming it is first column and append to existing list
+			self.sav_case = file_path
+			lbl_sav_button = 'SAV case = {}'.format(os.path.basename(self.sav_case))
 
-		# Update command and radio button status
-		self.cmd_select_sav_case.config(text=lbl_sav_button)
-		self.enable_radio_buttons(self.load_radio_btn_list)
-		self.enable_radio_buttons(self.gen_radio_btn_list)
-		self.cmd_scale_load_gen.configure(state=Tk.NORMAL)
+			# Update command and radio button status
+			self.cmd_select_sav_case.config(text=lbl_sav_button)
+			self.enable_radio_buttons(self.load_radio_btn_list)
+			self.enable_radio_buttons(self.gen_radio_btn_list)
+			self.cmd_scale_load_gen.configure(state=Tk.NORMAL)
+
+			# # If successful then get the zones and ratings from the loaded PSSE case and enable the buttons
+
+			psse_con = psse.PsseControl()
+			psse_con.load_data_case(pth_sav=self.sav_case)
+			psse_con.change_output(destination=False)
+
+			self.zone_data = psse.ZoneData()
+			self.zone_dict = self.zone_data.zone_dict
 
 		return None
 
@@ -1064,20 +1089,26 @@ class MainGUI:
 			title='Select SSE Load Estimates Spreadsheet'
 		)
 
-		# set load estimates to file path
-		self.load_estimates_xl = file_path
+		if file_path:
+			# set load estimates to file path
+			self.load_estimates_xl = file_path
 
-		# process excel file
-		Load_Estimates_to_PSSE.process_load_estimates_xl(self.load_estimates_xl)
+			# process excel file
+			Load_Estimates_to_PSSE.process_load_estimates_xl(self.load_estimates_xl)
 
-		# Update command and radio button status
-		self.cmd_select_sav_case.configure(state=Tk.NORMAL)
-		self.current_xl_path_lbl.configure(text=constants.General.loads_complete_dict.keys()[0])
-		self.load_complete_lbl_t_f.configure(text=str(constants.General.loads_complete_dict.values()[0]))
-		if constants.General.loads_complete_dict.values()[0]:
-			self.load_complete_lbl_t_f.configure(foreground='green')
-		else:
-			self.load_complete_lbl_t_f.configure(foreground='red')
+			# Update command and radio button status
+			self.cmd_select_sav_case.configure(state=Tk.NORMAL)
+			self.current_xl_path_lbl.configure(text=constants.General.xl_file_name)
+			self.load_complete_lbl_t_f.configure(text=str(constants.General.loads_complete))
+			if constants.General.loads_complete:
+				self.load_complete_lbl_t_f.configure(foreground='green')
+			else:
+				self.load_complete_lbl_t_f.configure(foreground='red')
+
+			# update GUI variables
+			self.load_gsps = constants.General.scalable_GSP_list
+			self.year_om.configure(values=constants.General.years_list)
+			self.demand_scaling_om.configure(values=constants.General.demand_scaling_list)
 
 		return None
 
@@ -1141,7 +1172,7 @@ class MainGUI:
 			self.sav_case,
 			constants.GUI.station_dict,
 			year=self.year_selected.get(),
-			season=self.season_selected.get()
+			season=self.demand_scaling_selected.get()
 		)
 
 		_ = tkMessageBox.showinfo(

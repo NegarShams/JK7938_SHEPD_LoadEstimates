@@ -1655,6 +1655,99 @@ class FormatResults:
 		# #df_ltds[bus_name] = None
 
 
+class ZoneData:
+	"""
+		Zone data
+	"""
+
+	def __init__(self, sid=-1, flag=2):
+		"""
+
+		:param int sid:  (optional=-1) subsystem number to use for data extraction
+		:param int flag: (optional=2) Selection of Zones to return
+		"""
+		# Initialise empty variables
+		self.df = pd.DataFrame()
+		self.zone_dict = dict()
+
+		# constants
+		# todo make logger work
+		# self.logger = constants.logger
+		self.c = constants.Zones
+
+		# So know whether referring to a transformer or a circuit, transformers use a different rating
+		self.sid = sid
+		self.flag = flag
+
+		# Update DataFrame from PSSE case
+		self.update()
+
+	def update(self):
+		"""
+			Updates data from SAV case
+		"""
+		# Declare functions
+		func_int = psspy.azoneint
+		func_char = psspy.azonechar
+		func_real = psspy.azonereal
+
+		# Retrieve data from PSSE
+		ierr_int, iarray = func_int(
+			sid=self.sid,
+			flag=self.flag,
+			string=(self.c.zone_num,))
+		ierr_char, carray = func_char(
+			sid=self.sid,
+			flag=self.flag,
+			string=(self.c.zone_name,))
+		ierr_real, rarray = func_real(
+			sid=self.sid,
+			flag=self.flag,
+			string=(self.c.load_p, self.c.load_q, self.c.gen_p, self.c.gen_q))
+		# Check for an error and return error message
+		if sum([ierr_int, ierr_char, ierr_real]) > 0:
+			self.logger.error(
+				(
+					'Unable to retrieve the zone load data from the SAV case and the following error codes '
+					'were returned: {}, {}, {} from functions <{}>, <{}>, <{}>'
+				).format(ierr_real, ierr_int, ierr_char, func_real.__name__, func_int.__name__, func_char.__name__)
+			)
+			raise ValueError('Error importing data from PSSE SAV case')
+
+		# Combine data into single list of lists
+		# Populate the complete DataFrame, overwriting any new values
+		data = iarray + carray + rarray
+		# Column headers initially in same order as data but then reordered to something more useful for exporting
+		# in case needed
+		# Self.q means it is based on reactive power rather than apparent power
+
+		initial_columns = [self.c.zone_num, self.c.zone_name, self.c.load_p, self.c.load_q, self.c.gen_p, self.c.gen_q]
+
+		# Transposed so columns in correct location and then columns reordered to something more suitable
+		df = pd.DataFrame(data).transpose()
+		df.columns = initial_columns
+		# Set based on Zone number and sort into ascending order
+		df.set_index(keys=self.c.zone_num, inplace=True, drop=False)
+		df.sort_index(axis=0, inplace=True)
+
+		# Check whether DataFrame is empty and if so return without these details and with an empty
+		# DataFrame
+		if df.empty and self.df.empty:
+			# If DataFrame is empty and original DataFrame is also empty then it means there is no data
+			# in this zone
+			self.logger.debug('No zone data returned for subsystem <{}>'.format(self.sid))
+			self.df = df
+		elif df.empty:
+			# If just this one empty then must mean that previously data was returned and therefore there is
+			# some error in the script
+			self.logger.error('Attempted to update zone data but no zone data returned from PSSE')
+		else:
+			self.df = df
+			self.zone_dict = self.df[[self.c.zone_name]].to_dict()[self.c.zone_name]
+
+		return None
+
+
 class LoadData:
 	"""
 		Class that obtains all the data for the loads in the PSSE model

@@ -468,8 +468,8 @@ def create_stations(df_dict):
 		else:
 			del gsp_station
 
-	for num, gsp in st_dict.iteritems():
-		print (gsp.gsp_col.values())
+	# for num, gsp in st_dict.iteritems():
+	# 	print (gsp.gsp_col.values())
 
 	return st_dict
 
@@ -588,7 +588,7 @@ def process_load_estimates_xl(xl_path):
 	excel_filename = os.path.basename(xl_path)
 	# worksheet to open
 	excel_ws_name = 'MASTER Based on SubstationLoad'
-	excel_ws_name_growth = 'Growth Rates'
+	# excel_ws_name_growth = 'Growth Rates'
 	# file_path = os.path.join(cur_path, example_folder, excel_filename)
 	# file_path = xl_fn
 	# load worksheet into dataframe
@@ -604,7 +604,7 @@ def process_load_estimates_xl(xl_path):
 	station_dict = create_stations(network_df_dict)
 
 	if Constants.DEBUG:
-		file_name = r'raw.xlsx'
+		file_name = r'Load Checks Summary.xlsx'
 		file_path = os.path.join(cur_path, example_folder, file_name)
 		sheet1 = 'Complete Load Data'
 		sheet2 = 'Missing Load Data'
@@ -616,29 +616,62 @@ def process_load_estimates_xl(xl_path):
 			worksheet1 = writer.sheets[sheet2]
 			worksheet1.set_tab_color('red')
 
-	# todo use a constant to save filename
+	# Create a dictionary to save the params after reading in excel file
 	params_dict = dict()
-	params_dict['station_dict'] = station_dict
+	params_dict[constants.SavedParamsStrings.station_dict_str] = station_dict
+	params_dict[constants.SavedParamsStrings.xl_file_name_str] = excel_filename
 
 	if Constants.bad_data.empty:
-		params_dict['loads_complete_dict'] = {excel_filename: True}
+		params_dict[constants.SavedParamsStrings.loads_complete_str] = True
 	else:
-		params_dict['loads_complete_dict'] = {excel_filename: False}
+		params_dict[constants.SavedParamsStrings.loads_complete_str] = False
 
-	params_dict['years_list'] = station_dict[0].load_forecast_dict.keys()
-	params_dict['demand_scaling_list'] = station_dict[0].seasonal_percent_dict.keys()
+	params_dict[constants.SavedParamsStrings.years_list_str] = \
+		sorted(station_dict[0].load_forecast_dict.keys())
+	params_dict[constants.SavedParamsStrings.demand_scaling_list_str] = \
+		sorted(station_dict[0].seasonal_percent_dict.keys())
 
 	temp_list = list()
 	for key, gsp in station_dict.iteritems():
 		if gsp.gsp_scalable:
 			temp_list.append(gsp.gsp)
-	params_dict['gsp_scaling list'] = temp_list
+	params_dict[constants.SavedParamsStrings.scalable_GSP_list_str] = sorted(temp_list)
 
-	with open(os.path.join(cur_path, example_folder, "params.pkl"), 'wb') as f:
+	with open(os.path.join(cur_path, example_folder, constants.SavedParamsStrings.params_file_name), 'wb') as f:
 		dill.dump(params_dict, f)
 
+	# update constants from params_dict
+	set_params_constants(params_dict)
+
+
+def set_params_constants(params_dict):
+	"""
+	FUunction to set the General constatns from a params dictionary
+	:param params_dict: dictionary containing the params needed for the GUI
+	params_dict = {
+	scalable_GSP_list: list of GSPs that are scalable,
+	years_list: list of years for forecast loads (from loaded excel file),
+	demand_scaling_list: list of options for demand scaling (from excel file =  Maximum Demand,
+	Minimum Demand, Spring/Autumn, Summer),
+	station_dict: dictionary of station class objects,
+	loads_complete: boolean if all loads are error free or not
+	xl_file_name:  the excel file name used to create the station_dict
+
+	:return:
+	"""
 	constants.General.params_dict = params_dict
-	# todo load params.pkl
+	constants.General.scalable_GSP_list = \
+		constants.General.params_dict[constants.SavedParamsStrings.scalable_GSP_list_str]
+	constants.General.years_list = \
+		constants.General.params_dict[constants.SavedParamsStrings.years_list_str]
+	constants.General.demand_scaling_list = \
+		constants.General.params_dict[constants.SavedParamsStrings.demand_scaling_list_str]
+	constants.General.station_dict = \
+		constants.General.params_dict[constants.SavedParamsStrings.station_dict_str]
+	constants.General.loads_complete = \
+		constants.General.params_dict[constants.SavedParamsStrings.loads_complete_str]
+	constants.General.xl_file_name = \
+		constants.General.params_dict[constants.SavedParamsStrings.xl_file_name_str]
 
 
 if __name__ == '__main__':
@@ -669,17 +702,19 @@ if __name__ == '__main__':
 	cur_path = os.path.dirname(__file__)
 	example_folder = r'load_est\test_files'
 
-	# todo load params.pkl
+	# if there is a params file load this and set constants
 	try:
-		with open(os.path.join(cur_path, example_folder, "station_dict.pkl"), 'rb') as f:
-			constants.General.station_dict = dill.load(f)
-		with open(os.path.join(cur_path, example_folder, "loads_complete_dict.pkl"), 'rb') as f:
-			constants.General.loads_complete_dict = dill.load(f)
+		with open(os.path.join(cur_path, example_folder, constants.SavedParamsStrings.params_file_name), 'rb') as f:
+			constants.General.params_dict = dill.load(f)
+
+		# update constants from params_dict
+		set_params_constants(constants.General.params_dict)
+
 	except:
 			pass
 
-	# init_psse = psse.InitialisePsspy()
-	# init_psse.initialise_psse()
+	init_psse = psse.InitialisePsspy()
+	init_psse.initialise_psse()
 
 	gui = load_est.gui.MainGUI()
 
