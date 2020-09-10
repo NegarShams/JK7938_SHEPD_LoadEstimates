@@ -15,6 +15,7 @@ import tkFileDialog
 import tkMessageBox
 import os
 import logging
+
 import math
 import datetime
 import webbrowser
@@ -231,6 +232,8 @@ class MainGUI:
 		self.load_scrollbar = ttk.Scrollbar()
 		# Load selector zone constants
 		self.load_boolvar_zon = dict()
+		self.load_zones_selected = dict()
+
 		self.zone_data = None
 		self.zone_dict = dict()
 		# todo just for testing to set a zone dict, set equal to constant
@@ -239,6 +242,7 @@ class MainGUI:
 		# Load selector gsp constants
 		self.load_boolvar_gsp = dict()
 		self.load_gsps = constants.General.scalable_GSP_list
+		self.load_gsps_selected = list()
 		# # todo just for testing to set a gsp dict, set equal to constant
 		# for i in range(28):
 		# 	self.load_gsps[i] = "gsp " + str(i)
@@ -252,13 +256,15 @@ class MainGUI:
 		self.current_xl_lbl = ttk.Label(self.master, text='Current File Loaded:', style=self.styles.label_general)
 		self.current_xl_lbl.grid(row=self.row(1), column=3)
 
-		if constants.General.params_dict:
+		if constants.General.xl_file_name:
 			xl_lbl = constants.General.xl_file_name
-			com_lbl = constants.General.loads_complete
 			sav_case_status = Tk.NORMAL
-			if com_lbl:
+
+			if constants.General.loads_complete:
+				com_lbl = constants.General.loads_complete_t_str
 				lbl_color = 'green'
 			else:
+				com_lbl = constants.General.loads_complete_f_str
 				lbl_color = 'red'
 		else:
 			xl_lbl = 'N/A'
@@ -277,6 +283,13 @@ class MainGUI:
 		self.load_complete_lbl_t_f = ttk.Label(
 			self.master, text=str(com_lbl), style=self.styles.label_general, foreground=lbl_color)
 		self.load_complete_lbl_t_f.grid(row=self.row(), column=4)
+
+		if not constants.General.loads_complete:
+			file_path = os.path.join(
+				constants.General.curPath,
+				constants.XlFileConstants.params_folder,
+				constants.XlFileConstants.xl_checks_file_name)
+			self.load_complete_lbl_t_f.bind("<Button-1>", lambda e: webbrowser.open_new(file_path))
 
 		# Add PSC logo with hyperlink to the website
 		self.add_psc_logo(row=0, col=5)
@@ -306,7 +319,7 @@ class MainGUI:
 		# add cmd button to scale load
 		self.cmd_scale_load_gen = self.add_cmd_button(
 			label='Scale Load and Generation',
-			cmd=self.scale_loads,
+			cmd=self.scale_loads_gens,
 			row=self.row(1), col=3
 		)
 		self.cmd_scale_load_gen.configure(state=Tk.DISABLED)
@@ -339,6 +352,7 @@ class MainGUI:
 		self.gen_scrollbar = ttk.Scrollbar()
 		# gen selector zone constants
 		self.gen_boolvar_zon = dict()
+		self.gen_zones_selected = dict()
 
 		self.var_gen_percent = Tk.DoubleVar()
 		# Add entry box
@@ -367,17 +381,17 @@ class MainGUI:
 
 		# Dictionary to create multiple buttons
 		self.load_radio_opts = OrderedDict([
-			('None', 0),
-			('All Loads', 1),
-			('Selected GSP Only', 2),
-			('Selected Zones Only', 3)
+			(0, 'None'),
+			(1, 'All Loads'),
+			(2, 'Selected GSP Only'),
+			(3, 'Selected Zones Only')
 		])
 
 		self._row = 0
 		self.load_radio_btn_list = list()
 		# Loop is used to create multiple Radio buttons
 		# rather than creating each button separately
-		for (text, value) in self.load_radio_opts.items():
+		for (value, text) in self.load_radio_opts.items():
 			temp_rb = ttk.Radiobutton(
 				self.load_labelframe,
 				text=text,
@@ -591,7 +605,42 @@ class MainGUI:
 		))
 		return None
 
-	def scale_loads(self):
+	def scale_loads_gens(self):
+
+		print('Load Scaling Options:')
+		if self.load_radio_opt_sel.get() == 0:
+			print(self.load_radio_opts[self.load_radio_opt_sel.get()])
+
+		print ('Year selected:')
+		print(self.year_selected.get())
+		print ('Demand Scaling selected:')
+		print(self.demand_scaling_selected.get())
+
+		if self.load_boolvar_gsp:
+			for gsp in self.load_gsps:
+				if self.load_boolvar_gsp[gsp].get():
+					self.load_gsps_selected.append(gsp)
+
+		if self.load_boolvar_zon:
+			for zone_num, zone_name in self.zone_dict.iteritems():
+				if self.load_boolvar_zon[zone_num].get():
+					self.load_zones_selected[zone_num] = zone_name
+
+		if self.gen_boolvar_zon:
+			for zone_num, zone_name in self.zone_dict.iteritems():
+				if self.gen_boolvar_zon[zone_num].get():
+					self.gen_zones_selected[zone_num] = zone_name
+
+		print ('Load GSPs Selected:')
+		print(self.load_gsps_selected)
+		print ('Load Zones Selected:')
+		print(self.load_zones_selected)
+		print ('Gen Zones Selected:')
+		print(self.gen_zones_selected)
+
+		self.load_gsps_selected = list()
+		self.load_zones_selected = dict()
+		self.gen_zones_selected = dict()
 
 		return
 
@@ -708,6 +757,9 @@ class MainGUI:
 			if len(self.load_entry_frame.winfo_children()) > 0:
 				for widget in self.load_entry_frame.winfo_children():
 					widget.destroy()
+			self.load_boolvar_gsp = dict()
+			self.load_boolvar_zon = dict()
+			self.gen_boolvar_zon = dict()
 
 		if self.load_radio_opt_sel.get() == 2:
 			# 'Select GSP(s):'
@@ -797,6 +849,7 @@ class MainGUI:
 			if len(self.gen_entry_frame.winfo_children()) > 0:
 				for widget in self.gen_entry_frame.winfo_children():
 					widget.destroy()
+			self.gen_zones_selected = dict()
 
 		if self.gen_radio_opt_sel.get() == 2:
 			lbl = 'Select Zone(s):'
@@ -873,6 +926,9 @@ class MainGUI:
 			self.load_select_frame.grid_remove()
 			self.load_side_lbl = None
 			self.load_select_frame = None
+			self.load_boolvar_gsp = dict()
+			self.load_boolvar_zon = dict()
+			self.gen_boolvar_zon = dict()
 
 	def remove_gen_bottom_selector(self):
 
@@ -881,6 +937,9 @@ class MainGUI:
 			self.gen_select_frame.grid_remove()
 			self.gen_side_lbl = None
 			self.gen_select_frame = None
+			self.load_boolvar_gsp = dict()
+			self.load_boolvar_zon = dict()
+			self.gen_boolvar_zon = dict()
 
 	def move_widgets_down(self):
 
@@ -1051,7 +1110,7 @@ class MainGUI:
 		file_path = tkFileDialog.askopenfilename(
 			initialdir=self.results_pth,
 			filetypes=constants.General.sav_types,
-			title='Select SAV case for fault studies'
+			title='Select SAV case...'
 		)
 
 		# only do something if a file path was selected, if used selected cancel nothing will happen.
@@ -1070,7 +1129,7 @@ class MainGUI:
 
 			psse_con = psse.PsseControl()
 			psse_con.load_data_case(pth_sav=self.sav_case)
-			psse_con.change_output(destination=False)
+			# psse_con.change_output(destination=False)
 
 			self.zone_data = psse.ZoneData()
 			self.zone_dict = self.zone_data.zone_dict
@@ -1099,11 +1158,16 @@ class MainGUI:
 			# Update command and radio button status
 			self.cmd_select_sav_case.configure(state=Tk.NORMAL)
 			self.current_xl_path_lbl.configure(text=constants.General.xl_file_name)
-			self.load_complete_lbl_t_f.configure(text=str(constants.General.loads_complete))
 			if constants.General.loads_complete:
-				self.load_complete_lbl_t_f.configure(foreground='green')
+				self.load_complete_lbl_t_f.configure(text=constants.General.loads_complete_t_str, foreground='green')
+				self.load_complete_lbl_t_f.unbind("<Button-1>")
 			else:
-				self.load_complete_lbl_t_f.configure(foreground='red')
+				self.load_complete_lbl_t_f.configure(text=constants.General.loads_complete_f_str, foreground='red')
+				file_path = os.path.join(
+					constants.General.curPath,
+					constants.XlFileConstants.params_folder,
+					constants.XlFileConstants.xl_checks_file_name)
+				self.load_complete_lbl_t_f.bind("<Button-1>", lambda e: webbrowser.open_new(file_path))
 
 			# update GUI variables
 			self.load_gsps = constants.General.scalable_GSP_list
@@ -1112,76 +1176,76 @@ class MainGUI:
 
 		return None
 
-	def process(self):
-		"""
-			Function sorts the files list to remove any duplicates and then closes GUI window
-		:return: None
-		"""
-		# Ask user to select target folder
-		# target_file = tkFileDialog.asksaveasfilename(
-		# 	initialdir=self.results_pth,
-		# 	defaultextension='.xlsx',
-		# 	filetypes=constants.General.file_types,
-		# 	title='Please select file for results')
-		#
-		# if not target_file:
-		# 	# Confirm a target file has actually been selected
-		# 	_ = tkMessageBox.showerror(
-		# 		title='No results file selected',
-		# 		message='Please select a results file to save the fault currents to!'
-		# 	)
-		# elif not self.sav_case:
-		# 	# Confirm SAV case has actually been provided
-		# 	self.logger.error('No SAV case has been selected, please select SAV case')
-		# 	# Display pop-up warning message
-		# 	# Ask user to confirm that they actually want to close the window
-		# 	_ = tkMessageBox.showerror(
-		# 		title='No SAV case',
-		# 		message='No SAV case has been selected for fault studies to be run on!'
-		# 	)
-		#
-		# else:
-		# 	# Save path to target file
-		# 	self.target_file = target_file
-		# 	# If SAV case has been selected the continue with study
-		# 	# Process the fault times into useful format converting into floats
-		# 	fault_times = self.var_fault_times_list.get()
-		# 	fault_times = fault_times.split(',')
-		# 	# Loop through each value converting to a float
-		# 	# TODO: Add in more error processing here
-		# 	self.fault_times = list()
-		# 	for val in fault_times:
-		# 		try:
-		# 			new_val = float(val)
-		# 			self.fault_times.append(new_val)
-		# 		except ValueError:
-		# 			self.logger.warning(
-		# 				'Unable to convert the fault time <{}> to a number and so has been skipped'.format(val)
-		# 			)
-		#
-		# 	self.logger.info(
-		# 		(
-		# 			'Faults will be applied at the busbars listed below and results saved to:\n{} \n '
-		# 			'for the fault times: {} seconds.  \nBusbars = \n{}'
-		# 		).format(self.target_file, self.fault_times, self.selected_busbars)
-		# 	)
-
-		print self.sav_case
-
-		Load_Estimates_to_PSSE.update_loads(
-			self.sav_case,
-			constants.GUI.station_dict,
-			year=self.year_selected.get(),
-			season=self.demand_scaling_selected.get()
-		)
-
-		_ = tkMessageBox.showinfo(
-			title='Update Complete',
-			message='PSSE sav case loads updated'
-		)
-		# Destroy GUI
-		# self.master.destroy()
-		return None
+	# def process(self):
+	# 	"""
+	# 		Function sorts the files list to remove any duplicates and then closes GUI window
+	# 	:return: None
+	# 	"""
+	# 	# Ask user to select target folder
+	# 	# target_file = tkFileDialog.asksaveasfilename(
+	# 	# 	initialdir=self.results_pth,
+	# 	# 	defaultextension='.xlsx',
+	# 	# 	filetypes=constants.General.file_types,
+	# 	# 	title='Please select file for results')
+	# 	#
+	# 	# if not target_file:
+	# 	# 	# Confirm a target file has actually been selected
+	# 	# 	_ = tkMessageBox.showerror(
+	# 	# 		title='No results file selected',
+	# 	# 		message='Please select a results file to save the fault currents to!'
+	# 	# 	)
+	# 	# elif not self.sav_case:
+	# 	# 	# Confirm SAV case has actually been provided
+	# 	# 	self.logger.error('No SAV case has been selected, please select SAV case')
+	# 	# 	# Display pop-up warning message
+	# 	# 	# Ask user to confirm that they actually want to close the window
+	# 	# 	_ = tkMessageBox.showerror(
+	# 	# 		title='No SAV case',
+	# 	# 		message='No SAV case has been selected for fault studies to be run on!'
+	# 	# 	)
+	# 	#
+	# 	# else:
+	# 	# 	# Save path to target file
+	# 	# 	self.target_file = target_file
+	# 	# 	# If SAV case has been selected the continue with study
+	# 	# 	# Process the fault times into useful format converting into floats
+	# 	# 	fault_times = self.var_fault_times_list.get()
+	# 	# 	fault_times = fault_times.split(',')
+	# 	# 	# Loop through each value converting to a float
+	# 	# 	# TODO: Add in more error processing here
+	# 	# 	self.fault_times = list()
+	# 	# 	for val in fault_times:
+	# 	# 		try:
+	# 	# 			new_val = float(val)
+	# 	# 			self.fault_times.append(new_val)
+	# 	# 		except ValueError:
+	# 	# 			self.logger.warning(
+	# 	# 				'Unable to convert the fault time <{}> to a number and so has been skipped'.format(val)
+	# 	# 			)
+	# 	#
+	# 	# 	self.logger.info(
+	# 	# 		(
+	# 	# 			'Faults will be applied at the busbars listed below and results saved to:\n{} \n '
+	# 	# 			'for the fault times: {} seconds.  \nBusbars = \n{}'
+	# 	# 		).format(self.target_file, self.fault_times, self.selected_busbars)
+	# 	# 	)
+	#
+	# 	print self.sav_case
+	#
+	# 	Load_Estimates_to_PSSE.update_loads(
+	# 		self.sav_case,
+	# 		constants.GUI.station_dict,
+	# 		year=self.year_selected.get(),
+	# 		season=self.demand_scaling_selected.get()
+	# 	)
+	#
+	# 	_ = tkMessageBox.showinfo(
+	# 		title='Update Complete',
+	# 		message='PSSE sav case loads updated'
+	# 	)
+	# 	# Destroy GUI
+	# 	# self.master.destroy()
+	# 	return None
 
 	def on_closing(self):
 		"""

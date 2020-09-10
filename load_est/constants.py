@@ -12,9 +12,10 @@
 import os
 import re
 import datetime
+import pandas as pd
 
 # Set to True to run in debug mode and therefore collect all output to window
-DEBUG_MODE = False
+DEBUG_MODE = True
 
 # TODO: Define as a constant input
 convert_to_kA = True
@@ -25,6 +26,8 @@ class General:
 		General constants
 	"""
 
+	curPath = str()
+
 	params_dict = dict()
 	scalable_GSP_list = list()
 	years_list = list()
@@ -32,6 +35,9 @@ class General:
 	station_dict = dict()
 	loads_complete = bool()
 	xl_file_name = str()
+
+	loads_complete_f_str = 'False - Click to view'
+	loads_complete_t_str = 'True'
 
 	ext_csv = '.csv'
 	node_label = 'Node Details'
@@ -52,6 +58,53 @@ class General:
 		pass
 
 
+class XlFileConstants:
+
+	dill_file_name = 'station_dict.pkl'
+	xl_checks_file_name = 'Load Checks Summary.xlsx'
+	params_folder = 'params'
+
+	excel_ws_name = 'MASTER Based on SubstationLoad'
+	sheet1 = 'Complete Load Data'
+	sheet2 = 'Missing Load Data'
+
+	# define good data and bad data dataframes
+	good_data = pd.DataFrame()
+	bad_data = pd.DataFrame()
+
+	# define columns from spreadsheet
+	gsp_col_no = 0
+	nrn_col_no = 1
+	name_col_no = 2
+
+	# define BPS and primary number of rows
+	bsp_no_rows = 4
+	prim_no_rows = 3
+
+	# the number of rows between the end of a GSP and the next GSP (not including row with 'Average Cold Spell (ACS))
+	row_separation = 1
+
+	# define station type string
+	gsp_type = 'GSP'
+	bsp_type = 'BSP'
+	primary_type = 'PRIMARY'
+	pf_str = 'p.f'
+	growth_rate_dict = dict()
+
+	# define the column ranges of interest
+	peak_mw_col = 7
+	growth_rate_col = 10
+	load_forecast_col_range = range(11, 25)
+	seasonal_percent_col_range = range(26, 29)
+	psse_buses_col_range = range(29, 37)
+
+	# define cell on interest for pf
+	pf_cell_tuple = (3, 7)
+
+	def __init__(self):
+		pass
+
+
 class SavedParamsStrings:
 
 	params_file_name = 'SSE_LE_params.pkl'
@@ -61,7 +114,7 @@ class SavedParamsStrings:
 	demand_scaling_list_str = 'demand_scaling_list'
 	station_dict_str = 'station_dict'
 	loads_complete_str = 'loads_complete'
-	xl_file_name_str = 'xl_file_name'
+	xl_file_name = 'xl_file_name'
 
 	def __init__(self):
 		"""

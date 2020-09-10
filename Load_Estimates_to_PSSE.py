@@ -3,6 +3,7 @@ import sys
 import load_est
 import load_est.psse as psse
 import load_est.constants as constants
+import logging
 import collections
 import time
 import numpy as np
@@ -17,6 +18,10 @@ os_path_PSSE = r'C:\Program Files (x86)\PTI\PSSE34\PSSBIN'  # or where else you 
 os.environ['PATH'] += ';' + os_path_PSSE
 os.environ['PATH'] += ';' + sys_path_PSSE
 import psspy
+
+# todo ask David if this is ok to do??
+# enables correct logging when functions called from GUI
+logger = logging.getLogger(constants.Logging.logger_name)
 
 
 class Station:
@@ -39,23 +44,23 @@ class Station:
 		self.st_type = st_type
 
 		# Initialise gsp col dictionary
-		self.gsp = df_fr.iat[Constants.gsp_col_no]
-		self.gsp_col = {df_fr.index[Constants.gsp_col_no]: df_fr.iat[Constants.gsp_col_no]}
+		self.gsp = df_fr.iat[constants.XlFileConstants.gsp_col_no]
+		self.gsp_col = {df_fr.index[constants.XlFileConstants.gsp_col_no]: df_fr.iat[constants.XlFileConstants.gsp_col_no]}
 
 		# Initialise name col dictionary
-		self.name_val = df_fr.iat[Constants.name_col_no]
-		self.name = {df_fr.index[Constants.name_col_no]: df_fr.iat[Constants.name_col_no]}
+		self.name_val = df_fr.iat[constants.XlFileConstants.name_col_no]
+		self.name = {df_fr.index[constants.XlFileConstants.name_col_no]: df_fr.iat[constants.XlFileConstants.name_col_no]}
 
 		# Initialise nrn col dictionary
-		self.nrn = {df_fr.index[Constants.nrn_col_no]: df_fr.iat[Constants.nrn_col_no]}
+		self.nrn = {df_fr.index[constants.XlFileConstants.nrn_col_no]: df_fr.iat[constants.XlFileConstants.nrn_col_no]}
 
 		# # Initialise growth_rate col dictionary
 		# self.growth_rate_key_val = df_fr.iat[Constants.growth_rate_col]
 		# self.growth_rate_key = {df_fr.index[Constants.growth_rate_col]: df_fr.iat[Constants.growth_rate_col]}
 
 		# Initialise peak_mw col dictionary
-		self.peak_mw_val = df_fr.iat[Constants.peak_mw_col]
-		self.peak_mw_dict = {df_fr.index[Constants.peak_mw_col]: df_fr.iat[Constants.peak_mw_col]}
+		self.peak_mw_val = df_fr.iat[constants.XlFileConstants.peak_mw_col]
+		self.peak_mw_dict = {df_fr.index[constants.XlFileConstants.peak_mw_col]: df_fr.iat[constants.XlFileConstants.peak_mw_col]}
 
 		# Initialise power factor dictionary - default power factor of 1
 		self.set_pf(1)
@@ -64,9 +69,9 @@ class Station:
 		self.gsp_aggregate_forecast_dict = dict()
 		self.load_forecast_dict = dict()
 
-		if self.st_type == Constants.gsp_type:
+		if self.st_type == constants.XlFileConstants.gsp_type:
 			# extract gsp power factor
-			gsp_pf = df.iat[Constants.pf_cell_tuple]
+			gsp_pf = df.iat[constants.XlFileConstants.pf_cell_tuple]
 			if not np.isnan(gsp_pf):
 				self.set_pf(gsp_pf)
 			self.gsp_scalable = True
@@ -85,11 +90,11 @@ class Station:
 		# Initialise name of upstream station as empty dictionary
 		self.name_up = dict()
 
-		self.load_forecast_dict = df_fr.iloc[Constants.load_forecast_col_range].to_dict()
-		self.seasonal_percent_dict = df_fr.iloc[Constants.seasonal_percent_col_range].to_dict()
+		self.load_forecast_dict = df_fr.iloc[constants.XlFileConstants.load_forecast_col_range].to_dict()
+		self.seasonal_percent_dict = df_fr.iloc[constants.XlFileConstants.seasonal_percent_col_range].to_dict()
 		self.seasonal_percent_dict['Maximum Demand'] = 1
 
-		psse_busses_df = df.loc[0:1, df.columns[Constants.psse_buses_col_range]]
+		psse_busses_df = df.loc[0:1, df.columns[constants.XlFileConstants.psse_buses_col_range]]
 		psse_idx = ['bus_no', 'pc']
 		psse_busses_df.index = psse_idx
 		self.psse_buses_dict = psse_busses_df.to_dict()
@@ -106,7 +111,7 @@ class Station:
 		:param pf: power factor value to set
 		:return:
 		"""
-		self.pf = {Constants.pf_str: pf}
+		self.pf = {constants.XlFileConstants.pf_str: pf}
 
 	def add_sub_station(self, station_obj):
 		"""
@@ -129,7 +134,7 @@ class Station:
 
 	def calc_load_percentages(self):
 
-		year_list = self.df.columns[Constants.load_forecast_col_range].to_list()
+		year_list = self.df.columns[constants.XlFileConstants.load_forecast_col_range].to_list()
 		year_list.sort()
 
 		peak_mw_df = pd.DataFrame(columns=year_list)
@@ -285,57 +290,13 @@ class Station:
 		# output
 		good_data = df['Station_data_pass'].item()
 
-		# if in debug mode add to dataframes
-		if Constants.DEBUG:
-			if good_data:
-				Constants.good_data = Constants.good_data.append(df)
-			else:
-				Constants.bad_data = Constants.bad_data.append(df)
+		# populate good and bad dataframes
+		if good_data:
+			constants.XlFileConstants.good_data = constants.XlFileConstants.good_data.append(df)
+		else:
+			constants.XlFileConstants.bad_data = constants.XlFileConstants.bad_data.append(df)
 
 		return good_data
-
-
-class Constants:
-
-	DEBUG = 1
-
-	dill_file_name = 'station_dict.pkl'
-
-	# define good data and bad data dataframes
-	good_data = pd.DataFrame()
-	bad_data = pd.DataFrame()
-
-	# define columns from spreadsheet
-	gsp_col_no = 0
-	nrn_col_no = 1
-	name_col_no = 2
-
-	# define BPS and primary number of rows
-	bsp_no_rows = 4
-	prim_no_rows = 3
-
-	# the number of rows between the end of a GSP and the next GSP (not including row with 'Average Cold Spell (ACS))
-	row_separation = 1
-
-	# define station type string
-	gsp_type = 'GSP'
-	bsp_type = 'BSP'
-	primary_type = 'PRIMARY'
-	pf_str = 'p.f'
-	growth_rate_dict = dict()
-
-	# define the column ranges of interest
-	peak_mw_col = 7
-	growth_rate_col = 10
-	load_forecast_col_range = range(11, 25)
-	seasonal_percent_col_range = range(26, 29)
-	psse_buses_col_range = range(29, 37)
-
-	# define cell on interest for pf
-	pf_cell_tuple = (3, 7)
-
-	def __init__(self):
-		pass
 
 
 def sse_load_xl_to_df(xl_filename, xl_ws_name, headers=True):
@@ -376,16 +337,16 @@ def sse_load_xl_to_df(xl_filename, xl_ws_name, headers=True):
 	return df
 
 
-def extract_bsp_dfs(raw_df):
+def extract_gsp_dfs(raw_df):
 	"""
 	Function to extract individual BSP dataframes
 	:param pd.Dataframe() raw_df:
 	:return dict(): network_df_dict Dictionary of dataframes with BSP name as key
 	"""
 	# extract the GSP row index to a list
-	gsp_row_list = list(raw_df[raw_df.iloc[:, Constants.gsp_col_no].str.contains(Constants.gsp_type) == True].index)
+	gsp_row_list = list(raw_df[raw_df.iloc[:, constants.XlFileConstants.gsp_col_no].str.contains(constants.XlFileConstants.gsp_type) == True].index)
 	# add the last row index of df so last GSP is captured later on
-	gsp_row_list.append(len(raw_df.index) + Constants.row_separation)
+	gsp_row_list.append(len(raw_df.index) + constants.XlFileConstants.row_separation)
 
 	# extract the headers from the 1st GSP row and format
 	headers = raw_df.iloc[gsp_row_list[0]].to_list()
@@ -402,11 +363,11 @@ def extract_bsp_dfs(raw_df):
 
 		# extract BSP name
 		name_row = gsp_row_list[i] + 1
-		temp_name = raw_df.iloc[name_row, Constants.gsp_col_no]
+		temp_name = raw_df.iloc[name_row, constants.XlFileConstants.gsp_col_no]
 		# print temp_name
 
 		# extract the rows of the df dataframe and reset index
-		temp_df = raw_df.iloc[name_row:gsp_row_list[i+1] - Constants.row_separation].copy()
+		temp_df = raw_df.iloc[name_row:gsp_row_list[i+1] - constants.XlFileConstants.row_separation].copy()
 		temp_df.reset_index(drop=True, inplace=True)
 
 		# add temp_df to dictionary
@@ -425,15 +386,15 @@ def create_stations(df_dict):
 
 	for name, net in df_dict.iteritems():
 		# todo why is the
-		# logger.info('Processing: ' + name)
-		print('Processing: ' + name)
+		logger.info('Processing: ' + name)
+		# print('Processing: ' + name)
 
 		# extract GSP rows as individual dataframe
-		gsp_idx = net[net[Constants.gsp_type] == name].index.item()
-		gsp_df = net.iloc[gsp_idx:gsp_idx + Constants.bsp_no_rows]
+		gsp_idx = net[net[constants.XlFileConstants.gsp_type] == name].index.item()
+		gsp_df = net.iloc[gsp_idx:gsp_idx + constants.XlFileConstants.bsp_no_rows]
 
 		# create station object
-		gsp_station = Station(gsp_df, Constants.gsp_type)
+		gsp_station = Station(gsp_df, constants.XlFileConstants.gsp_type)
 
 		# check gsp_station row
 		# only add GSP if passes row check
@@ -444,9 +405,9 @@ def create_stations(df_dict):
 			prim_temp_df = net.loc[net.index[4:]]
 
 			# step through prim_temp_df in 3 rows at a time
-			for b in xrange(0, len(prim_temp_df.index), Constants.prim_no_rows):
-				prim_df = prim_temp_df.iloc[b: b + Constants.prim_no_rows]
-				prim_station = Station(prim_df, Constants.primary_type)
+			for b in xrange(0, len(prim_temp_df.index), constants.XlFileConstants.prim_no_rows):
+				prim_df = prim_temp_df.iloc[b: b + constants.XlFileConstants.prim_no_rows]
+				prim_station = Station(prim_df, constants.XlFileConstants.primary_type)
 				# if primary passes station check add to GSP
 				if prim_station.station_check():
 					gsp_station.add_sub_station(prim_station)
@@ -573,75 +534,111 @@ def set_growth_const(df):
 	new_df.set_index('key', drop=True, inplace=True)
 	temp_dict = new_df.to_dict()
 
-	Constants.growth_rate_dict = temp_dict['growth_rate']
+	constants.XlFileConstants.growth_rate_dict = temp_dict['growth_rate']
 
 	return None
 
 
 def process_load_estimates_xl(xl_path):
+	"""
+	Function to load SSE load estimates excel file, perform data checks and create dictionary of station objects
+	:param xl_path: The path of the SSE load estimates file
+	:return:
+	"""
 
-	cur_path = os.path.dirname(__file__)
-	example_folder = r'load_est\test_files'
-
-	# workbook to open
-	# excel_filename = r'2019-20 SHEPD Load Estimates - v4.xlsx'
-	excel_filename = os.path.basename(xl_path)
-	# worksheet to open
-	excel_ws_name = 'MASTER Based on SubstationLoad'
-	# excel_ws_name_growth = 'Growth Rates'
-	# file_path = os.path.join(cur_path, example_folder, excel_filename)
-	# file_path = xl_fn
 	# load worksheet into dataframe
-	raw_dataframe = sse_load_xl_to_df(xl_path, excel_ws_name)
-	# growth_dataframe = sse_load_xl_to_df(xl_path, excel_ws_name_growth, headers=False)
+	raw_dataframe = sse_load_xl_to_df(xl_path, constants.XlFileConstants.excel_ws_name)
 
-	# set_growth_const(growth_dataframe)
-	#
-	# extract individual BSPs
-	network_df_dict = extract_bsp_dfs(raw_dataframe)
+	# extract individual GSPs
+	network_df_dict = extract_gsp_dfs(raw_dataframe)
 
 	# create station dictionary
 	station_dict = create_stations(network_df_dict)
 
-	if Constants.DEBUG:
-		file_name = r'Load Checks Summary.xlsx'
-		file_path = os.path.join(cur_path, example_folder, file_name)
-		sheet1 = 'Complete Load Data'
-		sheet2 = 'Missing Load Data'
-		with pd.ExcelWriter(file_path) as writer:
-			Constants.good_data.to_excel(writer, sheet_name=sheet1)
-			Constants.bad_data.to_excel(writer, sheet_name=sheet2)
-			worksheet1 = writer.sheets[sheet1]
-			worksheet1.set_tab_color('green')
-			worksheet1 = writer.sheets[sheet2]
-			worksheet1.set_tab_color('red')
+	# Check params folder exists to store log files in and if not create appropriate folders
+	params_folder = os.path.join(constants.General.cur_path, constants.XlFileConstants.params_folder)
+	if not os.path.exists(params_folder):
+		os.mkdir(params_folder)
+
+	# create new excel file name in the example folder and write the good data and bad data to separate sheets
+	file_path = os.path.join(
+		constants.General.cur_path,
+		constants.XlFileConstants.params_folder,
+		constants.XlFileConstants.xl_checks_file_name
+	)
+	with pd.ExcelWriter(file_path) as writer:
+		constants.XlFileConstants.good_data.to_excel(writer, sheet_name=constants.XlFileConstants.sheet1)
+		constants.XlFileConstants.bad_data.to_excel(writer, sheet_name=constants.XlFileConstants.sheet2)
+		worksheet1 = writer.sheets[constants.XlFileConstants.sheet1]
+		worksheet1.set_tab_color('green')
+		worksheet1 = writer.sheets[constants.XlFileConstants.sheet2]
+		worksheet1.set_tab_color('red')
 
 	# Create a dictionary to save the params after reading in excel file
+	params_dict = create_params_pkl(station_dict, xl_path)
+	# params_dict[constants.SavedParamsStrings.station_dict_str] = station_dict
+	# params_dict[constants.SavedParamsStrings.xl_file_name] = os.path.basename(xl_path)
+	# params_dict[constants.SavedParamsStrings.loads_complete_str] = constants.XlFileConstants.bad_data.empty
+	#
+	# # use the keys from the first station object for years list and demand scaling list
+	# params_dict[constants.SavedParamsStrings.years_list_str] = \
+	# 	sorted(station_dict[0].load_forecast_dict.keys())
+	# params_dict[constants.SavedParamsStrings.demand_scaling_list_str] = \
+	# 	sorted(station_dict[0].seasonal_percent_dict.keys())
+
+	# # generate a list of scalable GSP
+	# temp_list = list()
+	# for key, gsp in station_dict.iteritems():
+	# 	if gsp.gsp_scalable:
+	# 		temp_list.append(gsp.gsp)
+	# params_dict[constants.SavedParamsStrings.scalable_GSP_list_str] = sorted(temp_list)
+
+	# # save a pickle/dill file of the params dict to speed up processing later
+	# with open(
+	# 		os.path.join(
+	# 			constants.General.cur_path,
+	# 			constants.XlFileConstants.example_folder,
+	# 			constants.SavedParamsStrings.params_file_name), 'wb') as f:
+	# 	dill.dump(params_dict, f)
+
+	# update constants from params_dict
+	set_params_constants(params_dict)
+
+
+def create_params_pkl(station_dict, xl_path):
+	"""
+	Function to create params dict and save it to a pkl/dill file
+	:param station_dict: dictionary of station objects
+	:param xl_path: path of the SSE load estimates excel file
+	:return: params_dict
+	"""
 	params_dict = dict()
 	params_dict[constants.SavedParamsStrings.station_dict_str] = station_dict
-	params_dict[constants.SavedParamsStrings.xl_file_name_str] = excel_filename
+	params_dict[constants.SavedParamsStrings.xl_file_name] = os.path.basename(xl_path)
+	params_dict[constants.SavedParamsStrings.loads_complete_str] = constants.XlFileConstants.bad_data.empty
 
-	if Constants.bad_data.empty:
-		params_dict[constants.SavedParamsStrings.loads_complete_str] = True
-	else:
-		params_dict[constants.SavedParamsStrings.loads_complete_str] = False
-
+	# use the keys from the first station object for years list and demand scaling list
 	params_dict[constants.SavedParamsStrings.years_list_str] = \
 		sorted(station_dict[0].load_forecast_dict.keys())
 	params_dict[constants.SavedParamsStrings.demand_scaling_list_str] = \
 		sorted(station_dict[0].seasonal_percent_dict.keys())
 
+	# generate a list of scalable GSP
 	temp_list = list()
 	for key, gsp in station_dict.iteritems():
 		if gsp.gsp_scalable:
 			temp_list.append(gsp.gsp)
 	params_dict[constants.SavedParamsStrings.scalable_GSP_list_str] = sorted(temp_list)
 
-	with open(os.path.join(cur_path, example_folder, constants.SavedParamsStrings.params_file_name), 'wb') as f:
+	# save a pickle/dill file of the params dict to speed up processing later
+	with open(os.path.join(
+			constants.General.cur_path,
+			constants.XlFileConstants.params_folder,
+			constants.SavedParamsStrings.params_file_name),
+			'wb') as f:
 		dill.dump(params_dict, f)
 
-	# update constants from params_dict
-	set_params_constants(params_dict)
+	return params_dict
 
 
 def set_params_constants(params_dict):
@@ -671,7 +668,7 @@ def set_params_constants(params_dict):
 	constants.General.loads_complete = \
 		constants.General.params_dict[constants.SavedParamsStrings.loads_complete_str]
 	constants.General.xl_file_name = \
-		constants.General.params_dict[constants.SavedParamsStrings.xl_file_name_str]
+		constants.General.params_dict[constants.SavedParamsStrings.xl_file_name]
 
 
 if __name__ == '__main__':
@@ -679,11 +676,10 @@ if __name__ == '__main__':
 	"""
 		This is the main block of code that will be run if this script is run directly
 	"""
-	Constants.DEBUG = 1
-
 	# Time stamp for performance checking
 	t0 = time.time()
 
+	# todo does BKDY represent anything here?
 	# Produce unique identifier for logger
 	uid = 'BKDY_{}'.format(time.strftime('%Y%m%d_%H%M%S'))
 
@@ -699,26 +695,25 @@ if __name__ == '__main__':
 	psse_con = load_est.psse.PsseControl()
 	logger.log_colouring(run_in_psse=psse_con.run_in_psse)
 
-	cur_path = os.path.dirname(__file__)
-	example_folder = r'load_est\test_files'
+	constants.General.cur_path = os.path.dirname(__file__)
 
 	# if there is a params file load this and set constants
-	try:
-		with open(os.path.join(cur_path, example_folder, constants.SavedParamsStrings.params_file_name), 'rb') as f:
+	params_file = os.path.join(
+		constants.General.cur_path,
+		constants.XlFileConstants.params_folder,
+		constants.SavedParamsStrings.params_file_name
+	)
+	if os.path.exists(params_file):
+		with open(params_file, 'rb') as f:
 			constants.General.params_dict = dill.load(f)
 
 		# update constants from params_dict
 		set_params_constants(constants.General.params_dict)
 
-	except:
-			pass
-
 	init_psse = psse.InitialisePsspy()
 	init_psse.initialise_psse()
 
 	gui = load_est.gui.MainGUI()
-
-	# process_load_estimates_xl()
 
 	print('finished')
 
