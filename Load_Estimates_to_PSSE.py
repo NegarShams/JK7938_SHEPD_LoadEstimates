@@ -1,11 +1,11 @@
 import os
 import sys
 import load_est
-load_est = reload(load_est)
+# load_est = reload(load_est)
 import load_est.psse as psse
-psse = reload(psse)
+# psse = reload(psse)
 import load_est.constants as constants
-constants = reload(constants)
+# constants = reload(constants)
 import logging
 import collections
 import time
@@ -679,6 +679,10 @@ if __name__ == '__main__':
 	"""
 		This is the main block of code that will be run if this script is run directly
 	"""
+
+	load_est = reload(load_est)
+	psse = reload(psse)
+	constants = reload(constants)
 	# Time stamp for performance checking
 	t0 = time.time()
 
