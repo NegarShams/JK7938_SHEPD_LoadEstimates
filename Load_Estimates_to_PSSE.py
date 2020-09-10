@@ -710,8 +710,9 @@ if __name__ == '__main__':
 		# update constants from params_dict
 		set_params_constants(constants.General.params_dict)
 
-	init_psse = psse.InitialisePsspy()
-	init_psse.initialise_psse()
+	# todo this is probably no needed when running form PSSE
+	# init_psse = psse.InitialisePsspy()
+	# init_psse.initialise_psse()
 
 	gui = load_est.gui.MainGUI()
 

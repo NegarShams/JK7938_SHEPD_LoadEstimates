@@ -36,7 +36,7 @@ class General:
 	loads_complete = bool()
 	xl_file_name = str()
 
-	loads_complete_f_str = 'False - Click to view'
+	loads_complete_f_str = 'False - Click to view loads summary'
 	loads_complete_t_str = 'True'
 
 	ext_csv = '.csv'
