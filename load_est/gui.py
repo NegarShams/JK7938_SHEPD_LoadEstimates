@@ -149,6 +149,11 @@ class MainGUI:
 		Main class to produce the GUI
 		Allows the user to select the busbars and methodology to be applied in the fault current calculations
 	"""
+	# Package specific imports
+	psse = reload(psse)
+	constants = reload(constants)
+	reload(Load_Estimates_to_PSSE)
+
 	def __init__(self, title=constants.GUI.gui_name, station_dict=dict()):
 		"""
 			Initialise GUI
@@ -159,6 +164,7 @@ class MainGUI:
 		TODO: 	and user is still selecting busbars but very hard to implement.
 		TODO: (low priority) Additional parameters options to select some constants (kA vs A output)
 		"""
+
 		# Get logger handle
 		self.logger = logging.getLogger(constants.Logging.logger_name)
 		self.abort = False
