@@ -1,8 +1,11 @@
 import os
 import sys
 import load_est
+load_est = reload(load_est)
 import load_est.psse as psse
+load_est = reload(psse)
 import load_est.constants as constants
+constants = reload(constants)
 import logging
 import collections
 import time
@@ -715,6 +718,11 @@ if __name__ == '__main__':
 	# init_psse.initialise_psse()
 
 	gui = load_est.gui.MainGUI()
+
+	logging.shutdown()
+
+	# reset the PSSE outputs and close logging
+	logger.change_output(destination=1)
 
 	print('finished')
 
