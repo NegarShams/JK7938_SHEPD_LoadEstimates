@@ -725,9 +725,6 @@ if __name__ == '__main__':
 
 	logging.shutdown()
 
-	# reset the PSSE outputs and close logging
-	logger.change_output(destination=1)
-
 	print('finished')
 
 

@@ -281,10 +281,10 @@ class MainGUI:
 
 		# todo load in from complete_dict pkl
 		self.load_complete_lbl_t_f = ttk.Label(
-			self.master, text=str(com_lbl), style=self.styles.label_general, foreground=lbl_color)
+			self.master, text=str(com_lbl), style=self.styles.label_general, foreground=lbl_color, cursor='')
 		self.load_complete_lbl_t_f.grid(row=self.row(), column=4)
 
-		if not constants.General.loads_complete:
+		if not constants.General.loads_complete and constants.General.xl_file_name:
 			file_path = os.path.join(
 				constants.General.curPath,
 				constants.XlFileConstants.params_folder,
