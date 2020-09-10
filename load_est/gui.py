@@ -1162,7 +1162,8 @@ class MainGUI:
 				self.load_complete_lbl_t_f.configure(text=constants.General.loads_complete_t_str, foreground='green')
 				self.load_complete_lbl_t_f.unbind("<Button-1>")
 			else:
-				self.load_complete_lbl_t_f.configure(text=constants.General.loads_complete_f_str, foreground='red')
+				self.load_complete_lbl_t_f.configure(
+					text=constants.General.loads_complete_f_str, foreground='red', cursor='hand1')
 				file_path = os.path.join(
 					constants.General.curPath,
 					constants.XlFileConstants.params_folder,
