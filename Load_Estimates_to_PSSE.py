@@ -3,7 +3,7 @@ import sys
 import load_est
 load_est = reload(load_est)
 import load_est.psse as psse
-load_est = reload(psse)
+psse = reload(psse)
 import load_est.constants as constants
 constants = reload(constants)
 import logging
