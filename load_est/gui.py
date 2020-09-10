@@ -290,6 +290,7 @@ class MainGUI:
 				constants.XlFileConstants.params_folder,
 				constants.XlFileConstants.xl_checks_file_name)
 			self.load_complete_lbl_t_f.bind("<Button-1>", lambda e: webbrowser.open_new(file_path))
+			self.load_complete_lbl_t_f.configure(cursor='hand2')
 
 		# Add PSC logo with hyperlink to the website
 		self.add_psc_logo(row=0, col=5)
