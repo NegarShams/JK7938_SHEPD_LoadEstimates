@@ -149,20 +149,11 @@ class MainGUI:
 		Main class to produce the GUI
 		Allows the user to select the busbars and methodology to be applied in the fault current calculations
 	"""
-	# Package specific imports
-	psse = reload(psse)
-	constants = reload(constants)
-	reload(Load_Estimates_to_PSSE)
 
-	def __init__(self, title=constants.GUI.gui_name, station_dict=dict()):
+	def __init__(self, title=constants.GUI.gui_name):
 		"""
 			Initialise GUI
 		:param str title: (optional) - Title to be used for main window
-		:param str sav_case: (optional) - Full path to the existing SAV case
-		:param list busbars:  (optional) - List of busbars selected from slider
-		TODO: (low priority) Potential option for parallel processing where PSSE prepares the model once SAV case selected
-		TODO: 	and user is still selecting busbars but very hard to implement.
-		TODO: (low priority) Additional parameters options to select some constants (kA vs A output)
 		"""
 
 		# Get logger handle
@@ -183,7 +174,7 @@ class MainGUI:
 		self.styles = CustomStyles()
 		self.styles.configure_styles()
 
-		self.fault_times = list()
+		# self.fault_times = list()
 		# General constants which need to be initialised
 		self._row = 0
 		self._col = 0
@@ -191,11 +182,14 @@ class MainGUI:
 		self.ypad = 5
 
 		# Target file that results will be exported to
-		self.target_file = str()
-		self.results_pth = os.path.dirname(os.path.realpath(__file__))
+		# self.target_file = str()
+		# self.results_pth = os.path.dirname(os.path.realpath(__file__))
 
-		# Stand alone command button constants
+		# Stand alone command buttons
 		self.cmd_select_sav_case = ttk.Button()
+		self.sav_case_status = Tk.NORMAL
+		self.cmd_import_load_estimates = ttk.Button()
+		self.cmd_scale_load_gen = ttk.Button()
 
 		# PSC logo constants
 		self.hyp_help_instructions = ttk.Label()
@@ -205,30 +199,42 @@ class MainGUI:
 		self.hyp_user_manual = ttk.Label()
 		self.version_tool_lbl = ttk.Label()
 
+		# excel and sav case labels
+		self.load_estimates_xl = str()
+		self.current_xl_lbl = ttk.Label()
+		self.current_xl_path_lbl = ttk.Label()
+		self.load_complete_lbl = ttk.Label()
+		self.load_complete_lbl_t_f = ttk.Label()
+
+		# PSSE variables
+		self.sav_case = str()
+		self.psse_case = None
+		self.sav_new_psse_case_boolvar = Tk.BooleanVar()
+		self.sav_new_psse_case_chkbox = ttk.Checkbutton()
+
+		# ---------------------------------------- LOAD SCALING OPTIONS:------------------------------------------------
 		# Load Options label frame constants
 		self.load_labelframe = ttk.LabelFrame()
+		# boolean variable to store which scrollable frame the mouse is in
 		self._inLoadFrame = bool()
 
+		# Load radio buttons variables
 		self.load_radio_opt_sel = Tk.IntVar()
 		self.load_radio_btn_list = list()
 		self.load_radio_opts = OrderedDict()
 		self.load_prev_radio_opt = int()
 
 		# year drop down options
-		self.year_selected = Tk.StringVar()
-		# if bool(station_dict):
-		# 	constants.GUI.year_list = sorted(station_dict[0].load_forecast_dict.keys())
-		# 	constants.GUI.season_list = sorted(station_dict[0].seasonal_percent_dict.keys())
-		# 	# constants.GUI.station_dict = station_dict
-		self.year_list = constants.General.years_list
-		self.year_om = None
-		self.year_om_lbl = ttk.Label()
+		self.load_year_selected = Tk.StringVar()
+		self.load_year_list = constants.General.years_list
+		self.load_year_om = None
+		self.load_year_om_lbl = ttk.Label()
 
 		# season drop down options
-		self.demand_scaling_selected = Tk.StringVar()
-		self.demand_scaling_list = constants.General.demand_scaling_list
-		self.demand_scaling_om = None
-		self.demand_scaling_om_lbl = ttk.Label()
+		self.load_demand_scaling_selected = Tk.StringVar()
+		self.load_demand_scaling_list = constants.General.demand_scaling_list
+		self.load_demand_scaling_om = None
+		self.load_demand_scaling_om_lbl = ttk.Label()
 
 		# Load Selector scroll constants
 		self.load_side_lbl = ttk.Label()
@@ -240,110 +246,11 @@ class MainGUI:
 		self.load_boolvar_zon = dict()
 		self.load_zones_selected = dict()
 
-		self.zone_data = None
-		self.zone_dict = dict()
-		# todo just for testing to set a zone dict, set equal to constant
-		# for i in range(13):
-		# 	self.zones[i] = "zone " + str(i)
-		# Load selector gsp constants
 		self.load_boolvar_gsp = dict()
 		self.load_gsps = constants.General.scalable_GSP_list
 		self.load_gsps_selected = list()
-		# # todo just for testing to set a gsp dict, set equal to constant
-		# for i in range(28):
-		# 	self.load_gsps[i] = "gsp " + str(i)
 
-		# Add PSC logo with hyperlink to the website
-		self.add_psc_logo(row=self.row(), col=0)
-
-		self.cmd_import_load_estimates = self.add_cmd_button(
-			label='Import SSE Load Estimates .xlsx', cmd=self.import_load_estimates_xl, row=self.row(), col=3)
-
-		self.current_xl_lbl = ttk.Label(self.master, text='Current File Loaded:', style=self.styles.label_general)
-		self.current_xl_lbl.grid(row=self.row(1), column=3)
-
-		if constants.General.xl_file_name:
-			xl_lbl = constants.General.xl_file_name
-			sav_case_status = Tk.NORMAL
-
-			if constants.General.loads_complete:
-				com_lbl = constants.General.loads_complete_t_str
-				lbl_color = 'green'
-			else:
-				com_lbl = constants.General.loads_complete_f_str
-				lbl_color = 'red'
-		else:
-			xl_lbl = 'N/A'
-			com_lbl = 'N/A'
-			lbl_color = 'black'
-			sav_case_status = Tk.DISABLED
-
-		# todo load in from complete_dict pkl
-		self.current_xl_path_lbl = ttk.Label(self.master, text=xl_lbl, style=self.styles.label_general)
-		self.current_xl_path_lbl.grid(row=self.row(), column=4)
-
-		self.load_complete_lbl = ttk.Label(self.master, text='All loads error free:', style=self.styles.label_general)
-		self.load_complete_lbl.grid(row=self.row(1), column=3)
-
-		# todo load in from complete_dict pkl
-		self.load_complete_lbl_t_f = ttk.Label(
-			self.master, text=str(com_lbl), style=self.styles.label_general, foreground=lbl_color, cursor='')
-		self.load_complete_lbl_t_f.grid(row=self.row(), column=4)
-
-		if not constants.General.loads_complete and constants.General.xl_file_name:
-			file_path = os.path.join(
-				constants.General.curPath,
-				constants.XlFileConstants.params_folder,
-				constants.XlFileConstants.xl_checks_file_name)
-			self.load_complete_lbl_t_f.bind("<Button-1>", lambda e: webbrowser.open_new(file_path))
-			self.load_complete_lbl_t_f.configure(cursor='hand2')
-
-		# Add PSC logo with hyperlink to the website
-		self.add_psc_logo(row=0, col=5)
-
-		# SAV case to be run on
-		self.sav_case = str()
-		self.psse_case = None
-		self.load_estimates_xl = str()
-
-		# Determine label for button based on the SAV case being loaded
-		if self.sav_case:
-			lbl_sav_button = 'SAV case = {}'.format(os.path.basename(self.sav_case))
-		else:
-			lbl_sav_button = 'Select PSSE SAV Case'
-
-		self.cmd_select_sav_case = self.add_cmd_button(
-			label=lbl_sav_button, cmd=self.select_sav_case,  row=self.row(1), col=3)
-		self.cmd_select_sav_case.configure(state=sav_case_status)
-
-		self.add_sep(row=4, col_span=8)
-
-		# create load options labelframe
-		self.create_load_options()
-
-		#
-		self._col, self._row, = self.master.grid_size()
-		# add cmd button to scale load
-		self.cmd_scale_load_gen = self.add_cmd_button(
-			label='Scale Load and Generation',
-			cmd=self.scale_loads_gens,
-			row=self.row(1), col=3
-		)
-		self.cmd_scale_load_gen.configure(state=Tk.DISABLED)
-
-		self.sav_new_psse_case_boolvar = Tk.BooleanVar()
-		self.sav_new_psse_case_chkbox = ttk.Checkbutton(
-			self.master, text='Save new case after scaling', variable=self.sav_new_psse_case_boolvar,
-			style=self.styles.check_buttons
-		)
-		self.sav_new_psse_case_chkbox.grid(row=self.row(1), column=3, columnspan=2, padx=5, pady=5)
-
-		# # Add tick box for whether it needs to be opened again on completion
-		# self.add_open_excel(row=self.row(1), col=self.col())
-
-		# Add PSC logo in Windows Manager
-		self.add_psc_logo_wm()
-
+		# ---------------------------------------- GENERATION SCALING OPTIONS:------------------------------------------
 		# Generation label frame constants
 		self.gen_labelframe = ttk.LabelFrame()
 		self.gen_radio_opt_sel = Tk.IntVar()
@@ -361,43 +268,155 @@ class MainGUI:
 		self.gen_boolvar_zon = dict()
 		self.gen_zones_selected = dict()
 
-		self.var_gen_percent = Tk.DoubleVar()
+		self.gen_percent_var = Tk.DoubleVar()
 		# Add entry box
-		self.entry_gen_percent = Tk.Entry()
+		self.gen_percent_entry = Tk.Entry()
 
-		# create load options labelframe
-		self.create_gen_options()
+		# Zone data variables
+		self.zone_data = None
+		self.zone_dict = dict()
 
-		self._col, self._row, = self.master.grid_size()
-		# Add PSC UK and phone number
-		self.add_psc_phone(row=self.row(), col=0)
-		self.add_hyp_user_manual(row=self.row(), col=self.col()-1)
+		# update GUI variables to create the GUI
+		self.create_gui()
 
 		self.logger.debug('GUI window created')
 		# Produce GUI window
 		self.master.mainloop()
 
-	def create_load_options(self):
+	def create_gui(self):
+		"""
+		Function to update initialise GUI variables to create the GUI
+		:return:
+		"""
+		# todo row/col quite hard coded
+		# Add PSC logo with hyperlink to the website
+		self.add_psc_logo(row=self.row(), col=0)
 
+		# add import load estimate excel button
+		self.cmd_import_load_estimates = self.add_cmd_button(
+			label='Import SSE Load Estimates .xlsx', cmd=self.import_load_estimates_xl,
+			row=self.row(), col=3)
+
+		# add excel summary labels:
+		self.add_xl_summary_lbls()
+
+		# Add PSC logo with hyperlink to the website
+		# todo change this to a SSE logo
+		self.add_psc_logo(row=0, col=5)
+
+		# Determine label for button based on the SAV case being loaded
+		if self.sav_case:
+			lbl_sav_button = 'SAV case = {}'.format(os.path.basename(self.sav_case))
+		else:
+			lbl_sav_button = 'Select PSSE SAV Case'
+
+		self.cmd_select_sav_case = self.add_cmd_button(
+			label=lbl_sav_button, cmd=self.select_sav_case,
+			row=self.row(1), col=3)
+		self.cmd_select_sav_case.configure(state=self.sav_case_status)
+
+		self.add_sep(row=4, col_span=8)
+
+		# create load options labelframe
+		self.create_load_options()
+
+		# create generation options labelframe
+		self.create_gen_options()
+
+		# set ._col and ._row to the size of grid
+		self._col, self._row, = self.master.grid_size()
+		# add cmd button to scale load
+		self.cmd_scale_load_gen = self.add_cmd_button(
+			label='Scale Load and Generation', cmd=self.scale_loads_gens,
+			row=self.row(1), col=3)
+		self.cmd_scale_load_gen.configure(state=Tk.DISABLED)
+
+		self.sav_new_psse_case_chkbox = ttk.Checkbutton(
+			self.master, text='Save new case after scaling', variable=self.sav_new_psse_case_boolvar,
+			style=self.styles.check_buttons
+		)
+		self.sav_new_psse_case_chkbox.grid(row=self.row(1), column=3, columnspan=2, padx=5, pady=5)
+
+		# Add PSC logo in Windows Manager
+		self.add_psc_logo_wm()
+
+		# set ._col and ._row to the size of grid
+		self._col, self._row, = self.master.grid_size()
+		# Add PSC UK and phone number
+		self.add_psc_phone(row=self.row(), col=0)
+		self.add_hyp_user_manual(row=self.row(), col=self.col() - 1)
+
+		return
+
+	def add_xl_summary_lbls(self):
+		"""
+		Function to add summary labels about the loaded excel file
+		:return:
+		"""
+		# add Current File Loaded label
+		self.current_xl_lbl = ttk.Label(self.master, text='Current File Loaded:', style=self.styles.label_general)
+		self.current_xl_lbl.grid(row=self.row(1), column=3)
+
+		if constants.General.xl_file_name:
+			xl_lbl = constants.General.xl_file_name
+			self.sav_case_status = Tk.NORMAL
+
+			if constants.General.loads_complete:
+				com_lbl = constants.General.loads_complete_t_str
+				lbl_color = 'green'
+			else:
+				com_lbl = constants.General.loads_complete_f_str
+				lbl_color = 'red'
+		else:
+			xl_lbl = 'N/A'
+			com_lbl = 'N/A'
+			lbl_color = 'black'
+			self.sav_case_status = Tk.DISABLED
+
+		# add excel path label
+		self.current_xl_path_lbl = ttk.Label(self.master, text=xl_lbl, style=self.styles.label_general)
+		self.current_xl_path_lbl.grid(row=self.row(), column=4)
+
+		# add load complete label path label
+		self.load_complete_lbl = ttk.Label(self.master, text='All loads error free:', style=self.styles.label_general)
+		self.load_complete_lbl.grid(row=self.row(1), column=3)
+
+		# add True/False label
+		self.load_complete_lbl_t_f = ttk.Label(
+			self.master, text=str(com_lbl), style=self.styles.label_general, foreground=lbl_color, cursor='')
+		self.load_complete_lbl_t_f.grid(row=self.row(), column=4)
+
+		# if there are errors in the load file make the label open the excel summary file
+		if not constants.General.loads_complete and constants.General.xl_file_name:
+			file_path = os.path.join(
+				constants.General.curPath,
+				constants.XlFileConstants.params_folder,
+				constants.XlFileConstants.xl_checks_file_name)
+			self.load_complete_lbl_t_f.bind("<Button-1>", lambda e: webbrowser.open_new(file_path))
+			self.load_complete_lbl_t_f.configure(cursor='hand2')
+
+		return
+
+	def create_load_options(self):
+		"""
+		Function to create the load scaling options
+		:return:
+		"""
+		# add Load Scaling Options: label
 		label = ttk.Label(self.master, text='Load Scaling Options:', style=self.styles.label_lbl_frame)
 		self.load_labelframe = ttk.LabelFrame(self.master, labelwidget=label, style=self.styles.lbl_frame)
 		self.load_labelframe.grid(row=5, column=0, columnspan=4, padx=self.xpad, pady=self.ypad, sticky='NSEW')
 
+		# Initial option 0 as the first option and set as previous option also
 		self.load_radio_opt_sel = Tk.IntVar(self.master, 0)
-		self.load_prev_radio_opt = 1
+		self.load_prev_radio_opt = 0
 
 		# Dictionary to create multiple buttons
-		self.load_radio_opts = OrderedDict([
-			(0, 'None'),
-			(1, 'All Loads'),
-			(2, 'Selected GSP Only'),
-			(3, 'Selected Zones Only')
-		])
+		self.load_radio_opts = constants.GUI.load_radio_opts
 
 		self._row = 0
 		self.load_radio_btn_list = list()
-		# Loop is used to create multiple Radio buttons
-		# rather than creating each button separately
+		# Loop is used to create multiple Radio buttons,  rather than creating each button separately
 		for (value, text) in self.load_radio_opts.items():
 			temp_rb = ttk.Radiobutton(
 				self.load_labelframe,
@@ -411,76 +430,81 @@ class MainGUI:
 			self.load_radio_btn_list.append(temp_rb)
 			self.row(1)
 
+		# disable all radio buttons in load_radio_btn_list
 		self.enable_radio_buttons(self.load_radio_btn_list, enable=False)
 
 		# add drop down list for year
-		self.year_selected = Tk.StringVar(self.master)
+		self.load_year_selected = Tk.StringVar(self.master)
+
+		# use the year_list if it has values otherwise display N/A
 		if constants.General.years_list:
-			self.year_list = constants.General.years_list
+			self.load_year_list = constants.General.years_list
 		else:
-			self.year_list = [datetime.datetime.now().year]
+			self.load_year_list = ['N/A']
 
-		self.year_selected.set(self.year_list[0])
+		# set the the first entry in the year list
+		self.load_year_selected.set(self.load_year_list[0])
 
-		self.year_om_lbl = ttk.Label(master=self.load_labelframe, text='Year: ', style=self.styles.label_general)
-		self.year_om_lbl.grid(row=self.row(), column=self.col(), rowspan=1, sticky=Tk.E, padx=self.xpad)
-		# grey out text initially
-		self.year_om_lbl.configure(foreground='grey')
+		# add label for year drop down box, # grey out text initially
+		self.load_year_om_lbl = ttk.Label(master=self.load_labelframe, text='Year: ', style=self.styles.label_general)
+		self.load_year_om_lbl.grid(row=self.row(), column=self.col(), rowspan=1, sticky=Tk.E, padx=self.xpad)
+		self.load_year_om_lbl.configure(foreground='grey')
 
-		self.year_om = self.add_combobox(
+		# add year drop down box, initially disabled
+		self.load_year_om = self.add_combobox(
 			row=self.row(),
 			col=self.col(1),
-			var=self.year_selected,
-			list=self.year_list,
+			var=self.load_year_selected,
+			list=self.load_year_list,
 			location=self.load_labelframe
 		)
-		self.year_om.configure(state=Tk.DISABLED)
+		self.load_year_om.configure(state=Tk.DISABLED)
 
 		self._col = 0
 		# add drop down list for season
-		self.demand_scaling_selected = Tk.StringVar(self.master)
+		self.load_demand_scaling_selected = Tk.StringVar(self.master)
+
+		# if values in the demand scaling list other wise display N/A
 		if constants.General.demand_scaling_list:
-			self.demand_scaling_list = constants.General.demand_scaling_list
+			self.load_demand_scaling_list = constants.General.demand_scaling_list
 		else:
-			self.demand_scaling_list = ['Maximum Demand']
-		self.demand_scaling_selected.set(self.demand_scaling_list[0])
+			self.load_demand_scaling_list = ['N/A']
+		self.load_demand_scaling_selected.set(self.load_demand_scaling_list[0])
 
-		self.demand_scaling_om_lbl = ttk.Label(
+		# add demand scaling label, grey out text initially
+		self.load_demand_scaling_om_lbl = ttk.Label(
 			master=self.load_labelframe, text='Demand Scaling: ', style=self.styles.label_general)
-		self.demand_scaling_om_lbl.grid(row=self.row(1), column=self.col(), rowspan=1, sticky=Tk.E, padx=self.xpad)
-		# grey out text initially
-		self.demand_scaling_om_lbl.configure(foreground='grey')
+		self.load_demand_scaling_om_lbl.grid(row=self.row(1), column=self.col(), rowspan=1, sticky=Tk.E, padx=self.xpad)
+		self.load_demand_scaling_om_lbl.configure(foreground='grey')
 
-		self.demand_scaling_om = self.add_combobox(
+		# add demand scaling label, initially disabled
+		self.load_demand_scaling_om = self.add_combobox(
 			row=self.row(), col=self.col(1),
-			var=self.demand_scaling_selected,
-			list=self.demand_scaling_list,
+			var=self.load_demand_scaling_selected,
+			list=self.load_demand_scaling_list,
 			location=self.load_labelframe
 		)
-		self.demand_scaling_om.configure(state=Tk.DISABLED)
+		self.load_demand_scaling_om.configure(state=Tk.DISABLED)
 
 		return None
 
 	def create_gen_options(self):
 
+		# add Generation Scaling Options: label
 		label = ttk.Label(self.master, text='Generation Scaling Options:', style=self.styles.label_lbl_frame)
 		self.gen_labelframe = ttk.LabelFrame(self.master, labelwidget=label, style=self.styles.lbl_frame)
 		self.gen_labelframe.grid(row=5, column=4, columnspan=4, padx=self.xpad, pady=self.ypad, sticky='NSEW')
 
+		# Initial option 0 as the first option and set as previous option also
 		self.gen_radio_opt_sel = Tk.IntVar(self.master, 0)
-		self.gen_prev_radio_opt = 1
+		self.gen_prev_radio_opt = 0
 
 		# Dictionary to create multiple buttons
-		self.gen_radio_opts = OrderedDict([
-			(0, 'None'),
-			(1, 'All Generators'),
-			(2, 'Selected Zones Only')
-		])
+		self.gen_radio_opts = constants.GUI.gen_radio_opts
 
 		self._row = 0
 		self.gen_radio_btn_list = list()
-		# Loop is used to create multiple Radiobuttons
-		# rather than creating each button separately
+		# Loop is used to create multiple Radio buttons, rather than creating each button separately
 		for (value, text) in self.gen_radio_opts.items():
 			temp_rb = ttk.Radiobutton(
 				self.gen_labelframe,
@@ -494,8 +518,10 @@ class MainGUI:
 			self.gen_radio_btn_list.append(temp_rb)
 			self.row(1)
 
+		# disable all radio buttons in gen_radio_btn_list
 		self.enable_radio_buttons(self.gen_radio_btn_list, enable=False)
 
+		# add entry box for generator scaling percentage
 		self.add_entry_gen_percent(row=self.row(), col=0)
 
 		return None
@@ -618,10 +644,10 @@ class MainGUI:
 		print(self.load_radio_opts[self.load_radio_opt_sel.get()])
 		print
 		print ('Year selected: '),
-		print(self.year_selected.get())
+		print(self.load_year_selected.get())
 		print
 		print ('Demand Scaling selected: '),
-		print(self.demand_scaling_selected.get())
+		print(self.load_demand_scaling_selected.get())
 		print
 
 		if self.load_boolvar_gsp:
@@ -650,7 +676,7 @@ class MainGUI:
 		print(self.gen_radio_opts[self.gen_radio_opt_sel.get()])
 		print
 		print ('Gen Scaling %: '),
-		print(self.entry_gen_percent.get())
+		print(self.gen_percent_entry.get())
 		print
 		print ('Gen Zones Selected: '),
 		print(self.gen_zones_selected)
@@ -671,28 +697,28 @@ class MainGUI:
 
 		if self.load_radio_opt_sel.get() == 0:
 			# disable year and seasons drop downs and labels
-			self.year_om.config(state=Tk.DISABLED)
-			self.year_om_lbl.config(foreground='grey')
-			self.demand_scaling_om.config(state=Tk.DISABLED)
-			self.demand_scaling_om_lbl.config(foreground='grey')
+			self.load_year_om.config(state=Tk.DISABLED)
+			self.load_year_om_lbl.config(foreground='grey')
+			self.load_demand_scaling_om.config(state=Tk.DISABLED)
+			self.load_demand_scaling_om_lbl.config(foreground='grey')
 			# remove the bottom load selector
-			self.remove_load_bottom_selector()
+			self.remove_load_scroll_frame()
 
-		if self.load_radio_opt_sel.get() == 1:
+		elif self.load_radio_opt_sel.get() == 1:
 			# enable year and seasons drop downs and labels
-			self.year_om.config(state=Tk.NORMAL)
-			self.year_om_lbl.config(foreground='')
-			self.demand_scaling_om.config(state=Tk.NORMAL)
-			self.demand_scaling_om_lbl.config(foreground='')
+			self.load_year_om.config(state=Tk.NORMAL)
+			self.load_year_om_lbl.config(foreground='')
+			self.load_demand_scaling_om.config(state=Tk.NORMAL)
+			self.load_demand_scaling_om_lbl.config(foreground='')
 			# remove the bottom load selector
-			self.remove_load_bottom_selector()
+			self.remove_load_scroll_frame()
 
 		elif self.load_radio_opt_sel.get() > 1 and self.load_radio_opt_sel.get() != self.load_prev_radio_opt:
 			# enable year and seasons drop downs and labels
-			self.year_om.config(state=Tk.NORMAL)
-			self.year_om_lbl.config(foreground='')
-			self.demand_scaling_om.config(state=Tk.NORMAL)
-			self.demand_scaling_om_lbl.config(foreground='')
+			self.load_year_om.config(state=Tk.NORMAL)
+			self.load_year_om_lbl.config(foreground='')
+			self.load_demand_scaling_om.config(state=Tk.NORMAL)
+			self.load_demand_scaling_om_lbl.config(foreground='')
 			# create load selector frame
 			self.create_load_select_frame()
 
@@ -702,26 +728,44 @@ class MainGUI:
 		return None
 
 	def gen_radio_button_click(self):
+		"""
+		Function to control GUI actions when a generation radio button is clicked
+		:return:
+		"""
 
 		if self.gen_radio_opt_sel.get() == 0:
-			self.entry_gen_percent.config(state=Tk.DISABLED)
-			self.remove_gen_bottom_selector()
-		if self.gen_radio_opt_sel.get() == 1:
-			self.entry_gen_percent.config(state=Tk.NORMAL)
-			self.remove_gen_bottom_selector()
+			# disable entry box and remove the generation scroll frame
+			self.gen_percent_entry.config(state=Tk.DISABLED)
+			self.remove_gen_scroll_frame()
+
+		elif self.gen_radio_opt_sel.get() == 1:
+			# enable entry box and remove the generation scroll frame
+			self.gen_percent_entry.config(state=Tk.NORMAL)
+			self.remove_gen_scroll_frame()
+
 		elif self.gen_radio_opt_sel.get() > 1 and self.gen_radio_opt_sel.get() != self.gen_prev_radio_opt:
-			self.entry_gen_percent.config(state=Tk.NORMAL)
+			# enable entry box and create the generation scroll frame
+			self.gen_percent_entry.config(state=Tk.NORMAL)
 			self.create_gen_select_frame()
 
+		# store last radio button selected in gen_prev_radio_opt
 		self.gen_prev_radio_opt = self.gen_radio_opt_sel.get()
+
 		return None
 
 	def enable_radio_buttons(self, radio_btn_list, enable=True):
+		"""
+		Function to enable or disable radio buttons that are stored in radio_btn_list
+		:param radio_btn_list: list of radio button widgets
+		:param enable: True or False
+		:return:
+		"""
 
-		for radio_btn in radio_btn_list:
-			if enable:
+		if enable:
+			for radio_btn in radio_btn_list:
 				radio_btn.config(state=Tk.NORMAL)
-			else:
+		else:
+			for radio_btn in radio_btn_list:
 				radio_btn.config(state=Tk.DISABLED)
 
 		return None
@@ -893,6 +937,7 @@ class MainGUI:
 		return None
 
 	def _bound_to_mousewheel(self, event):
+		# Function to bind scrolling in the load or generation scroll frame
 		if event.widget == self.load_select_frame:
 			self.load_select_frame.bind_all("<MouseWheel>", self._on_mousewheel)
 			self._inLoadFrame = True
@@ -901,6 +946,7 @@ class MainGUI:
 			self._inLoadFrame = False
 
 	def _unbound_to_mousewheel(self, event):
+		# Function to unbind scrolling in the load or generation scroll frame
 		if event.widget == self.load_select_frame:
 			self.load_select_frame.unbind_all("<MouseWheel>")
 			self._inLoadFrame = bool()
@@ -909,59 +955,74 @@ class MainGUI:
 			self._inLoadFrame = bool()
 
 	def _on_mousewheel(self, event):
+		# Function to scroll the load or generation scroll frame depend on which
 		if self._inLoadFrame:
 			self.load_canvas.yview_scroll(-1 * (event.delta / 120), "units")
 		else:
 			self.gen_canvas.yview_scroll(-1 * (event.delta / 120), "units")
 
 	def load_canvas_scroll_function(self, _event):
-		"""
-			Function to control what happens when the load frame is scrolled
-		:return None:
-		"""
-
-		# self.canvas.configure(
-		# 	scrollregion=self.canvas.bbox("all"), width=230, height=200, background=self.styles.bg_color_frame)
+		# Function to set the scrolling region in the load frame
 		self.load_canvas.configure(scrollregion=self.load_canvas.bbox("all"), width=230, height=200)
 		return None
 
 	def gen_canvas_scroll_function(self, _event):
-		"""
-			Function to control what happens when the gen frame is scrolled
-		:return None:
-		"""
-
-		# self.canvas.configure(
-		# 	scrollregion=self.canvas.bbox("all"), width=230, height=200, background=self.styles.bg_color_frame)
+		# Function to set the scrolling region in the load frame
 		self.gen_canvas.configure(scrollregion=self.gen_canvas.bbox("all"), width=230, height=200)
-
 		return None
 
-	def remove_load_bottom_selector(self):
+	def remove_load_scroll_frame(self):
+		"""
+		Function to remove load scroll frame by removing widgets
+		:return:
+		"""
 
 		if self.load_select_frame is not None:
+
+			# remove widgets
 			self.load_side_lbl.grid_remove()
 			self.load_select_frame.grid_remove()
+
+			# reset variables
 			self.load_side_lbl = None
 			self.load_select_frame = None
 			self.load_boolvar_gsp = dict()
 			self.load_boolvar_zon = dict()
 			self.gen_boolvar_zon = dict()
 
-	def remove_gen_bottom_selector(self):
+		return None
+
+	def remove_gen_scroll_frame(self):
+		"""
+		Function to remove generation scroll frame by removing widgets/
+		:return:
+		"""
 
 		if self.gen_select_frame is not None:
+
+			# remove widgets
 			self.gen_side_lbl.grid_remove()
 			self.gen_select_frame.grid_remove()
+
+			# reset variables
 			self.gen_side_lbl = None
 			self.gen_select_frame = None
 			self.load_boolvar_gsp = dict()
 			self.load_boolvar_zon = dict()
 			self.gen_boolvar_zon = dict()
 
-	def move_widgets_down(self):
+		return None
 
+	def move_widgets_down(self):
+		"""
+		Function called when a scroll frame is created to moved widget down accordingly
+		:return:
+		"""
+
+		# find the end column and end row of the current grid
 		master_col, master_rows, = self.master.grid_size()
+
+		# change grid location of widgets
 		self.cmd_scale_load_gen.grid(
 			row=master_rows + 1, column=self.cmd_scale_load_gen.grid_info()['column'])
 		self.sav_new_psse_case_chkbox.grid(
@@ -987,11 +1048,11 @@ class MainGUI:
 			master=self.gen_labelframe, text='% of Generator Maximum Output:', style=self.styles.label_general)
 		lbl.grid(row=row, column=col, rowspan=1, sticky=Tk.W, padx=self.xpad, pady=self.ypad)
 		# Set initial value for variable
-		self.var_gen_percent.set(100.0)
+		self.gen_percent_var.set(100.0)
 		# Add entry box
-		self.entry_gen_percent = Tk.Entry(master=self.gen_labelframe, textvariable=self.var_gen_percent)
-		self.entry_gen_percent.grid(row=row+1, column=col, sticky=Tk.W, padx=self.xpad, pady=self.ypad)
-		self.entry_gen_percent.config(state=Tk.DISABLED)
+		self.gen_percent_entry = Tk.Entry(master=self.gen_labelframe, textvariable=self.gen_percent_var)
+		self.gen_percent_entry.grid(row=row + 1, column=col, sticky=Tk.W, padx=self.xpad, pady=self.ypad)
+		self.gen_percent_entry.config(state=Tk.DISABLED)
 		# CreateToolTip(widget=self.entry_fault_times, text=(
 		# 	'Enter the durations after the fault the current should be calculated for.\n'
 		# 	'Multiple values can be input in a list.'
@@ -1191,8 +1252,8 @@ class MainGUI:
 
 			# update GUI variables
 			self.load_gsps = constants.General.scalable_GSP_list
-			self.year_om.configure(values=constants.General.years_list)
-			self.demand_scaling_om.configure(values=constants.General.demand_scaling_list)
+			self.load_year_om.configure(values=constants.General.years_list)
+			self.load_demand_scaling_om.configure(values=constants.General.demand_scaling_list)
 
 		return None
 

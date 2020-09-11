@@ -13,6 +13,7 @@ import os
 import re
 import datetime
 import pandas as pd
+from collections import OrderedDict
 
 # Set to True to run in debug mode and therefore collect all output to window
 DEBUG_MODE = True
@@ -178,6 +179,19 @@ class GUI:
 	psc_font = 'Calibri 10 bold'
 	psc_color_web_blue = '#%02x%02x%02x' % (43, 112, 170)
 	psc_color_grey = '#%02x%02x%02x' % (89, 89, 89)
+
+	load_radio_opts = OrderedDict([
+		(0, 'None'),
+		(1, 'All Loads'),
+		(2, 'Selected GSP Only'),
+		(3, 'Selected Zones Only')
+	])
+
+	gen_radio_opts = OrderedDict([
+		(0, 'None'),
+		(1, 'All Generators'),
+		(2, 'Selected Zones Only')
+	])
 
 	def __init__(self):
 		"""

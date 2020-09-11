@@ -680,9 +680,6 @@ if __name__ == '__main__':
 		This is the main block of code that will be run if this script is run directly
 	"""
 
-	load_est = reload(load_est)
-	psse = reload(psse)
-	constants = reload(constants)
 	# Time stamp for performance checking
 	t0 = time.time()
 
