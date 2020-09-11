@@ -472,16 +472,16 @@ class MainGUI:
 
 		# Dictionary to create multiple buttons
 		self.gen_radio_opts = OrderedDict([
-			('None', 0),
-			('All Generators', 1),
-			('Selected Zones Only', 2)
+			(0, 'None'),
+			(1, 'All Generators'),
+			(2, 'Selected Zones Only')
 		])
 
 		self._row = 0
 		self.gen_radio_btn_list = list()
 		# Loop is used to create multiple Radiobuttons
 		# rather than creating each button separately
-		for (text, value) in self.gen_radio_opts.items():
+		for (value, text) in self.gen_radio_opts.items():
 			temp_rb = ttk.Radiobutton(
 				self.gen_labelframe,
 				text=text,
@@ -614,14 +614,15 @@ class MainGUI:
 
 	def scale_loads_gens(self):
 
-		print('Load Scaling Options:')
-		if self.load_radio_opt_sel.get() == 0:
-			print(self.load_radio_opts[self.load_radio_opt_sel.get()])
-
-		print ('Year selected:')
+		print('Load Scaling Options: '),
+		print(self.load_radio_opts[self.load_radio_opt_sel.get()])
+		print
+		print ('Year selected: '),
 		print(self.year_selected.get())
-		print ('Demand Scaling selected:')
+		print
+		print ('Demand Scaling selected: '),
 		print(self.demand_scaling_selected.get())
+		print
 
 		if self.load_boolvar_gsp:
 			for gsp in self.load_gsps:
@@ -638,12 +639,22 @@ class MainGUI:
 				if self.gen_boolvar_zon[zone_num].get():
 					self.gen_zones_selected[zone_num] = zone_name
 
-		print ('Load GSPs Selected:')
+		print ('Load GSPs Selected: '),
 		print(self.load_gsps_selected)
-		print ('Load Zones Selected:')
+		print
+		print ('Load Zones Selected: '),
 		print(self.load_zones_selected)
-		print ('Gen Zones Selected:')
+		print
+
+		print('Gen Scaling Options: '),
+		print(self.gen_radio_opts[self.gen_radio_opt_sel.get()])
+		print
+		print ('Gen Scaling %: '),
+		print(self.entry_gen_percent.get())
+		print
+		print ('Gen Zones Selected: '),
 		print(self.gen_zones_selected)
+		print
 
 		self.load_gsps_selected = list()
 		self.load_zones_selected = dict()
@@ -821,7 +832,7 @@ class MainGUI:
 			self._col = 0
 			# Label for what is included in entry
 			self.gen_side_lbl = ttk.Label(master=self.gen_labelframe, text=lbl, style=self.styles.label_general)
-			self.gen_side_lbl.grid(row=self.row(1), column=self.col(),sticky='W', padx=self.xpad, pady=self.ypad)
+			self.gen_side_lbl.grid(row=self.row(1), column=self.col(), sticky='W', padx=self.xpad, pady=self.ypad)
 
 			# Produce a frame which will house the zones check buttons and place them in the window
 			self.gen_select_frame = ttk.Frame(self.gen_labelframe, relief=Tk.GROOVE, style=self.styles.frame_outer)
@@ -1135,6 +1146,7 @@ class MainGUI:
 			# # If successful then get the zones and ratings from the loaded PSSE case and enable the buttons
 
 			psse_con = psse.PsseControl()
+			# todo tables do not load in when running in PSSE while GUI is open?? - ask David
 			psse_con.load_data_case(pth_sav=self.sav_case)
 			# psse_con.change_output(destination=False)
 

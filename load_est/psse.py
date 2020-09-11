@@ -781,6 +781,8 @@ class PsseControl:
 			)
 			raise ValueError('Unable to Load PSSE Case')
 
+		func(sfile=pth_sav)
+
 		# Set the PSSE load flow tolerances to ensure all studies done with same parameters
 		self.set_load_flow_tolerances()
 
