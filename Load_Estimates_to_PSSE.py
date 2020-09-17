@@ -20,9 +20,9 @@ sys.path.append(sys_path_PSSE)
 os_path_PSSE = r'C:\Program Files (x86)\PTI\PSSE34\PSSBIN'  # or where else you find the psse.exe
 os.environ['PATH'] += ';' + os_path_PSSE
 os.environ['PATH'] += ';' + sys_path_PSSE
-import psspy
+# noinspection PyUnresolvedReferences
+import psspy  # noqa
 
-# todo ask David if this is ok to do??
 # enables correct logging when functions called from GUI
 logger = logging.getLogger(constants.Logging.logger_name)
 
@@ -517,7 +517,7 @@ def scale_all_loads(year=str(), season=str()):
 						# loads at the substations buses
 
 						ierr = psspy.load_chng_5(
-							ibus=sub_psse_bus['bus_no'],
+							i=sub_psse_bus['bus_no'],
 							id=loads_df.loc[sub_psse_bus['bus_no'], 'ID'],
 							realar1=p,  # P load MW
 							realar2=q)  # Q load MW
@@ -545,7 +545,7 @@ def scale_all_gens(pc=float()):
 			q = gen.PQGEN.imag * float(pc) / float(100)
 
 			ierr = psspy.machine_chng_2(
-				ibus=gen.NUMBER,
+				i=gen.NUMBER,
 				id=gen.ID,
 				realar1=p,  # MW set point
 				realar2=q,  # MVAr set point

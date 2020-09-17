@@ -2,3 +2,4 @@ dill
 Pillow
 pandas
 numpy
+XlsxWriter

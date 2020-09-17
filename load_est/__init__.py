@@ -18,37 +18,35 @@ import inspect
 import subprocess
 import shutil
 
-# Constants have to be defined here since may not be able to actually import constants when running from PSSE rather
-# than Python if PSSE python dll is wrong.
-# #c_python27_dll = 'python27.dll'
-# This is the folder which contains the PSSE python27.dll file
-# #c_psse_psspy27_folder = 'PSSPY27'
-# This is the folder which contains the Python python27.dll file
-# #c_python_psspy27_folder = 'Windows'
+# Meta Data
+__author__ = 'David Mills'
+__version__ = '1.0'
+__email__ = 'david.mills@PSCconsulting.com'
+__phone__ = '+44 7899 984158'
+__status__ = 'Development'
+
 # This is the Python version that the G74 tool has been written for, errors due to imports are likely to be due to a
 # Python version issue.
 designed_python_version = [2, 7, 9]
 
+def find_python_executable():
+	"""
+		Function finds the python executable that is being used to run this code
+	:return str python_exe_path:  Path string to the python executable
+	"""
+	# Find python executable
+	python_exe_path = 'ERROR NO FILE FOUND'
+	for dirpath, dirnames, filenames in os.walk(sys.exec_prefix):
+		for filename in filenames:
+			if filename == 'python.exe':
+				python_exe_path = os.path.join(dirpath, filename)
+				break
 
-# #def find_python27_dll(parent_folder, start_directory='C:\\'):
-# #	"""
-# #		Function to find the PSSE directory which hosts the Python27.dll file so that it can be renamed to avoid
-# #		it being used any more.
-# #	:param str parent_folder: A folder that must be in the search path for it to be considered valid
-# #	:param str start_directory: (optional) - Assumes C drive
-# #	:return str path to python27_dll:
-# #	"""
-# #	for root, dirs, files in os.walk(start_directory):  # Walks through all subdirectories searching for file
-# #		# Removes any directories tat start with
-# #		[dirs.remove(d) for d in list(dirs) if d.startswith('$') or d.startswith('.')]
-# #		# Check if contains dll file and is located in the PSSE folder rather than python folder
-# #		if c_python27_dll in files and parent_folder in root:
-# #			return root, c_python27_dll
-# #
-# #	return None, None
+	return python_exe_path
+
 
 # Location where local packages will be installed
-local_packages = os.path.join(os.path.dirname(__file__), '..', 'local_packages')
+local_packages = os.path.join(os.path.dirname(__file__), 'local_packages')
 # Won't be searched unless it exists when added to system path
 if not os.path.exists(local_packages):
 	os.makedirs(local_packages)
@@ -132,41 +130,80 @@ try:
 	import load_est.psse as psse
 	import load_est.file_handling as file_handling
 	import load_est.gui as gui
-except ImportError:
+except (ImportError, AttributeError):
 	t0 = time.time()
-	# TODO: Add in a check to confirm that the files actually exist
+
+	# Path to where python packages are stored
+	package_wheels = os.path.join(os.path.dirname(__file__), 'python_packages')
+	# Confirm wheels actually exist or fail at this point
+	if os.path.isdir(package_wheels):
+		print(
+			'Unable to import some packages because they may not have been installed, the script will now install '
+			'the missing packages locally which will result in some pop-ups and may take some time, please be patient!!\n\n'
+			'This should only happen once for each machine / PSSE version'
+		)
+	else:
+		print(
+			(
+				'The directory {} does not exist which is needed to install the missing python packages, the script '
+				'cannot continue.  Please check the original source of this code'
+			).format(package_wheels)
+		)
+		raise ImportError('Python Package Wheels Directory Missing')
+
 	print(
 		'Unable to import some packages because they may not have been installed, script will now install '
 		'missing packages but this may take some time, please be patient!!'
 	)
 
 	# Remove any already installed local_packages as they will all be re-installed.
-	if os.path.isdir(local_packages):
-		shutil.rmtree(local_packages)
-	# Wait 500ms and then create a new folder
-	time.sleep(0.5)
-	os.makedirs(local_packages)
+	try:
+		if os.path.isdir(local_packages):
+			shutil.rmtree(local_packages)
+		# Wait 500ms and then create a new folder
+		time.sleep(0.5)
+		os.makedirs(local_packages)
+	except WindowsError:
+		print('Unable to delete folder: {} but will try to continue anyway'.format(local_packages))
 
-	batch_path = os.path.join(os.path.dirname(__file__), '..', 'JK7938_Missing_Packages.bat')
-	print('The following batch file will be run to install the packages: {}'.format(batch_path))
-	subprocess.call([batch_path])
+	# Find python executable
+	python_exe = find_python_executable()
+
+	batch_path = os.path.join(os.path.dirname(__file__), 'JK7938_Missing_Packages.bat')
+
+	# Text files produced when batch file run to control output messages
+	batch_install_errors = os.path.join(local_packages, 'batch_install_errors.log')
+	batch_log_messages = os.path.join(local_packages, 'batch_install_progress.log')
+
 	print(
 		(
-			'Unless the batch file showed an error packages have now been installed and took {:.2f} seconds'
-		).format(time.time()-t0)
+			'The following batch file will be run to install the packages: {} to the folder {}.  \n\t'
+			'Any error messages during the installation will be recorded in the file: {}\n\t'
+			'All log messaged during the installation will be recorded in the file: {}'
+		).format(batch_path, local_packages, batch_install_errors, batch_log_messages)
 	)
+
+	# Adjusted to use an additional try block to capture if an error occurs
+	try:
+		# Open file to store errors into
+		with open(batch_install_errors, 'w') as f:
+			# Now checks whether an error status is returned
+			subprocess.check_output(
+				[batch_path, python_exe, package_wheels, local_packages, '>'+batch_log_messages],
+				stderr=f
+			)
+		print('Installation of missing packages completed in  {:.2f} seconds'.format(time.time()-t0))
+	except subprocess.CalledProcessError:
+		print(
+			'Installation of missing packages failed, check the errors reported in the file {}'.format(batch_install_errors)
+		)
+		raise EnvironmentError('Unable to install missing python packages')
+
 	import load_est.constants as constants
 	import load_est.psse as psse
 	import load_est.file_handling as file_handling
 	import load_est.gui as gui
 	print('All modules now imported correctly')
-
-# Meta Data
-__author__ = 'David Mills'
-__version__ = '0.1'
-__email__ = 'david.mills@PSCconsulting.com'
-__phone__ = '+44 7899 984158'
-__status__ = 'Development'
 
 
 def decorate_emit(fn):
