@@ -337,6 +337,7 @@ class MainGUI:
 			style=self.styles.check_buttons
 		)
 		self.sav_new_psse_case_chkbox.grid(row=self.row(1), column=3, columnspan=2, padx=5, pady=5)
+		self.sav_new_psse_case_chkbox.configure(state=Tk.DISABLED)
 
 		# Add PSC logo in Windows Manager
 		self.add_psc_logo_wm()
