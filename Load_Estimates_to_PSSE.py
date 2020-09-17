@@ -465,7 +465,7 @@ def exp_stations_to_excel(st_dict):
 	return df
 
 
-def update_loads(psse_case, station_dict, year=str(), season=str()):
+def scale_all_loads(year=str(), season=str()):
 	"""
 	Function to update station loads
 	:param dict() station_dict: dictionary of station objects
@@ -474,30 +474,30 @@ def update_loads(psse_case, station_dict, year=str(), season=str()):
 	:return:
 	"""
 
-	# Check if PSSE is running and if so retrieve list of selected busbars, else return empty list
-	psse_con = load_est.psse.PsseControl()
-	psse_con.load_data_case(pth_sav=psse_case)
-	psse_con.change_output(destination=False)
+	# # Check if PSSE is running and if so retrieve list of selected busbars, else return empty list
+	# psse_con = load_est.psse.PsseControl()
+	# psse_con.load_data_case(pth_sav=psse_case)
+	# psse_con.change_output(destination=False)
 
 	loads = psse.LoadData()
 	loads_df = loads.df.set_index('NUMBER')
 
 	loads_list = map(int, list(loads_df.index))
 
-	for station_no, station in station_dict.iteritems():
+	for station_no, station in constants.General.station_dict.iteritems():
 
-		for num, psse_bus in station.psse_buses_dict.iteritems():
+		# for num, psse_bus in station.psse_buses_dict.iteritems():
 
-			p = station.load_forecast_dict[year] * station.seasonal_percent_dict[season]
-			q = p * math.tan(math.acos(station.pf['p.f']))
-
-			# if there is load at the station bus
-			if psse_bus in loads_list:
-				ierr = psspy.load_chng_5(
-					ibus=psse_bus,
-					id=loads_df.loc[psse_bus, 'ID'],
-					realar1=10,  # P load MW
-					realar2=10)  # Q load MW
+			# p = station.load_forecast_dict[year] * station.seasonal_percent_dict[season] * station.pf['p.f']
+			# q = p * math.tan(math.acos(station.pf['p.f']))
+			#
+			# # if there is load at the station bus
+			# if psse_bus in loads_list:
+			# 	ierr = psspy.load_chng_5(
+			# 		ibus=psse_bus,
+			# 		id=loads_df.loc[psse_bus, 'ID'],
+			# 		realar1=p,  # P load MW
+			# 		realar2=q)  # Q load MW
 
 		for i in xrange(0, station.no_sub_stations):
 
@@ -508,7 +508,7 @@ def update_loads(psse_case, station_dict, year=str(), season=str()):
 				if sub_psse_bus is np.nan:
 					continue
 				if sub_psse_bus in loads_list:
-					p = sub_station.load_forecast_dict[year] * sub_station.seasonal_percent_dict[season]
+					p = sub_station.load_forecast_dict[year] * sub_station.seasonal_percent_dict[season] *station.pf['p.f']
 					q = p * math.tan(math.acos(sub_station.pf['p.f']))
 					# loads at the substations buses
 

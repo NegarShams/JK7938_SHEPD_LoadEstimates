@@ -182,8 +182,8 @@ class MainGUI:
 		self.ypad = 5
 
 		# Target file that results will be exported to
-		# self.target_file = str()
-		# self.results_pth = os.path.dirname(os.path.realpath(__file__))
+		self.target_file = str()
+		self.results_pth = os.path.dirname(os.path.realpath(__file__))
 
 		# Stand alone command buttons
 		self.cmd_select_sav_case = ttk.Button()
@@ -639,6 +639,12 @@ class MainGUI:
 		return None
 
 	def scale_loads_gens(self):
+
+		if self.load_radio_opt_sel.get() == 1:
+			Load_Estimates_to_PSSE.scale_all_loads(
+				year=self.load_year_selected.get(),
+				season=self.load_demand_scaling_selected.get()
+				)
 
 		print('Load Scaling Options: '),
 		print(self.load_radio_opts[self.load_radio_opt_sel.get()])
