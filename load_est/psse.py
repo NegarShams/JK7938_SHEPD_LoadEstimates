@@ -472,6 +472,8 @@ class MachineData:
 
 		self.df = pd.DataFrame()
 
+		self.update()
+
 	def update(self):
 		"""
 			Update DataFrame with the data necessary for the idev file
@@ -495,7 +497,7 @@ class MachineData:
 		ierr_cplx, xarray = func_cplx(
 			sid=self.sid,
 			flag=self.flag,
-			string=(self.c.zsource,))
+			string=(self.c.zsource, 'PQGEN'))
 		ierr_char, carray = func_char(
 			sid=self.sid,
 			flag=self.flag,
@@ -515,7 +517,7 @@ class MachineData:
 		# Column headers initially in same order as data but then reordered to something more useful for exporting
 		# in case needed
 		initial_columns = [
-			self.c.bus, self.c.rpos, self.c.xsubtr, self.c.xtrans, self.c.xsynch, self.c.zsource, self.c.identifier
+			self.c.bus, self.c.rpos, self.c.xsubtr, self.c.xtrans, self.c.xsynch, self.c.zsource, 'PQGEN', self.c.identifier
 		]
 
 		# Transposed so columns in correct location and then columns reordered to something more suitable
@@ -684,6 +686,11 @@ class PsseControl:
 		self.run_in_psse = None
 		# Determine whether running from PSSE or not
 		self.running_from_psse()
+
+	def update_psse_gui(self):
+
+		if self.run_in_psse:
+			psspy.refreshgui()
 
 	def change_output(self, destination=constants.PSSE.output_default):
 		"""

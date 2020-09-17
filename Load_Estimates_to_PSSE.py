@@ -468,7 +468,6 @@ def exp_stations_to_excel(st_dict):
 def scale_all_loads(year=str(), season=str()):
 	"""
 	Function to update station loads
-	:param dict() station_dict: dictionary of station objects
 	:param str() year:
 	:param str() season:
 	:return:
@@ -481,7 +480,6 @@ def scale_all_loads(year=str(), season=str()):
 
 	loads = psse.LoadData()
 	loads_df = loads.df.set_index('NUMBER')
-
 	loads_list = map(int, list(loads_df.index))
 
 	for station_no, station in constants.General.station_dict.iteritems():
@@ -503,23 +501,55 @@ def scale_all_loads(year=str(), season=str()):
 
 			sub_station = station.sub_stations_dict[i]
 
-			for sub_num, sub_psse_bus in sub_station.psse_buses_dict.iteritems():
+			if sub_station.idv_scalable:
 
-				if sub_psse_bus is np.nan:
-					continue
-				if sub_psse_bus in loads_list:
-					p = sub_station.load_forecast_dict[year] * sub_station.seasonal_percent_dict[season] *station.pf['p.f']
-					q = p * math.tan(math.acos(sub_station.pf['p.f']))
-					# loads at the substations buses
+				for sub_num, sub_psse_bus in sub_station.psse_buses_dict.iteritems():
 
-					ierr = psspy.load_chng_5(
-						ibus=sub_psse_bus,
-						id=loads_df.loc[sub_psse_bus, 'ID'],
-						realar1=p,  # P load MW
-						realar2=q)  # Q load MW
-					break
-				else:
-					logger.info('Bus number ' + str(sub_psse_bus) + ' not in PSSE sav case')
+					if math.isnan(sub_psse_bus['bus_no']):
+						continue
+					if sub_psse_bus['bus_no'] in loads_list:
+						p = sub_station.load_forecast_dict[year] * \
+							sub_station.seasonal_percent_dict[season] * \
+							sub_station.pf['p.f'] * \
+							sub_psse_bus['pc']
+
+						q = p * math.tan(math.acos(sub_station.pf['p.f']))
+						# loads at the substations buses
+
+						ierr = psspy.load_chng_5(
+							ibus=sub_psse_bus['bus_no'],
+							id=loads_df.loc[sub_psse_bus['bus_no'], 'ID'],
+							realar1=p,  # P load MW
+							realar2=q)  # Q load MW
+						break
+					else:
+						logger.info('Bus number ' + str(sub_psse_bus) + ' not in PSSE sav case')
+
+	return None
+
+
+def scale_all_gens(pc=float()):
+	"""
+	Function to Scale all generation in case by scaling percentage
+	:param pc:
+	:return:
+	"""
+
+	machine_data = psse.MachineData()
+
+	for gen in machine_data.df.itertuples():
+
+		if gen.RPOS != 999:
+
+			p = gen.PQGEN.real * float(pc) / float(100)
+			q = gen.PQGEN.imag * float(pc) / float(100)
+
+			ierr = psspy.machine_chng_2(
+				ibus=gen.NUMBER,
+				id=gen.ID,
+				realar1=p,  # MW set point
+				realar2=q,  # MVAr set point
+				)
 
 	return None
 
