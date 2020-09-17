@@ -209,6 +209,7 @@ class MainGUI:
 		# PSSE variables
 		self.sav_case = str()
 		self.psse_case = None
+		self.psse_con = None
 		self.sav_new_psse_case_boolvar = Tk.BooleanVar()
 		self.sav_new_psse_case_chkbox = ttk.Checkbutton()
 
@@ -696,6 +697,8 @@ class MainGUI:
 		self.load_gsps_selected = list()
 		self.load_zones_selected = dict()
 		self.gen_zones_selected = dict()
+
+		self.psse_con.update_psse_gui()
 
 		return
 
@@ -1217,15 +1220,15 @@ class MainGUI:
 
 			# # If successful then get the zones and ratings from the loaded PSSE case and enable the buttons
 
-			psse_con = psse.PsseControl()
+			self.psse_con = psse.PsseControl()
 			# todo tables do not load in when running in PSSE while GUI is open?? - ask David
-			psse_con.load_data_case(pth_sav=self.sav_case)
+			self.psse_con.load_data_case(pth_sav=self.sav_case)
 			# psse_con.change_output(destination=False)
 
 			self.zone_data = psse.ZoneData()
 			self.zone_dict = self.zone_data.zone_dict
 
-			psse_con.update_psse_gui()
+			self.psse_con.update_psse_gui()
 
 		return None
 
