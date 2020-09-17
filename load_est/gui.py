@@ -332,12 +332,12 @@ class MainGUI:
 			row=self.row(1), col=3)
 		self.cmd_scale_load_gen.configure(state=Tk.DISABLED)
 
-		self.sav_new_psse_case_chkbox = ttk.Checkbutton(
-			self.master, text='Save new case after scaling', variable=self.sav_new_psse_case_boolvar,
-			style=self.styles.check_buttons
-		)
-		self.sav_new_psse_case_chkbox.grid(row=self.row(1), column=3, columnspan=2, padx=5, pady=5)
-		self.sav_new_psse_case_chkbox.configure(state=Tk.DISABLED)
+		# self.sav_new_psse_case_chkbox = ttk.Checkbutton(
+		# 	self.master, text='Save new case after scaling', variable=self.sav_new_psse_case_boolvar,
+		# 	style=self.styles.check_buttons
+		# )
+		# self.sav_new_psse_case_chkbox.grid(row=self.row(1), column=3, columnspan=2, padx=5, pady=5)
+		# self.sav_new_psse_case_chkbox.configure(state=Tk.DISABLED)
 
 		# Add PSC logo in Windows Manager
 		self.add_psc_logo_wm()
@@ -727,6 +727,7 @@ class MainGUI:
 			self.load_demand_scaling_om_lbl.config(foreground='')
 			# remove the bottom load selector
 			self.remove_load_scroll_frame()
+			self.cmd_scale_load_gen.configure(state=Tk.NORMAL)
 
 		elif self.load_radio_opt_sel.get() > 1 and self.load_radio_opt_sel.get() != self.load_prev_radio_opt:
 			# enable year and seasons drop downs and labels
@@ -736,6 +737,7 @@ class MainGUI:
 			self.load_demand_scaling_om_lbl.config(foreground='')
 			# create load selector frame
 			self.create_load_select_frame()
+			self.cmd_scale_load_gen.configure(state=Tk.DISABLED)
 
 		# store last radio button selected in load_prev_radio_opt
 		self.load_prev_radio_opt = self.load_radio_opt_sel.get()
@@ -757,11 +759,13 @@ class MainGUI:
 			# enable entry box and remove the generation scroll frame
 			self.gen_percent_entry.config(state=Tk.NORMAL)
 			self.remove_gen_scroll_frame()
+			self.cmd_scale_load_gen.configure(state=Tk.NORMAL)
 
 		elif self.gen_radio_opt_sel.get() > 1 and self.gen_radio_opt_sel.get() != self.gen_prev_radio_opt:
 			# enable entry box and create the generation scroll frame
 			self.gen_percent_entry.config(state=Tk.NORMAL)
 			self.create_gen_select_frame()
+			self.cmd_scale_load_gen.configure(state=Tk.DISABLED)
 
 		# store last radio button selected in gen_prev_radio_opt
 		self.gen_prev_radio_opt = self.gen_radio_opt_sel.get()
@@ -1040,8 +1044,8 @@ class MainGUI:
 		# change grid location of widgets
 		self.cmd_scale_load_gen.grid(
 			row=master_rows + 1, column=self.cmd_scale_load_gen.grid_info()['column'])
-		self.sav_new_psse_case_chkbox.grid(
-			row=master_rows + 2, column=self.sav_new_psse_case_chkbox.grid_info()['column'])
+		# self.sav_new_psse_case_chkbox.grid(
+		# 	row=master_rows + 2, column=self.sav_new_psse_case_chkbox.grid_info()['column'])
 		self.psc_info.grid(
 			row=master_rows+3, column=self.psc_info.grid_info()['column'])
 		self.hyp_user_manual.grid(
