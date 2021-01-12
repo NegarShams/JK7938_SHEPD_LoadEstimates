@@ -626,11 +626,10 @@ class MainGUI:
 		self.hyp_user_manual = ttk.Label(
 			self.master, text="User Guide", cursor="hand2", style=self.styles.label_hyperlink)
 		self.hyp_user_manual.grid(row=row, column=col, sticky="se", padx=self.xpad)
-		# self.hyp_user_manual.bind('<Button - 1>', lambda e: webbrowser.open_new(
-		# 	os.path.join(local_directory, 'JK7261-GUI-02 User Guide.pdf')))
-		self.hyp_user_manual.bind('<Button - 1>', lambda e: webbrowser.open_new('https://www.pscconsulting.com/'))
+		self.hyp_user_manual.bind('<Button - 1>', lambda e: webbrowser.open_new(
+			os.path.join(constants.GUIDefaultValues.local_directory, constants.GUIDefaultValues.user_guide)))
 		self.version_tool_lbl = ttk.Label(
-			self.master, text='Version 0.1', style=self.styles.label_version_number)
+			self.master, text='Version {}'.format(constants.__version__), style=self.styles.label_version_number)
 		self.version_tool_lbl.grid(row=row, column=col-1, sticky="se", padx=self.xpad)
 		CreateToolTip(widget=self.hyp_user_manual, text=(
 			"Open the GUI user guide"

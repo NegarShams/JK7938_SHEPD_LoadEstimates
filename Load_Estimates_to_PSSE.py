@@ -1,3 +1,7 @@
+# TODO: Update to include an option to save the case
+# TODO: Faster importing / data cleansing options
+# TODO: Further work on work instruction required
+
 import os
 import sys
 import load_est
@@ -316,11 +320,11 @@ def sse_load_xl_to_df(xl_filename, xl_ws_name, headers=True):
 	else:
 		h = None
 
-	# import as dataframe
+	# import as dataframe and force to use xlsxwriter
 	df = pd.read_excel(
 		io=xl_filename,
 		sheet_name=xl_ws_name,
-		header=h
+		header=h,
 	)
 	# remove empty rows (i.e with all NaNs)
 	df.dropna(

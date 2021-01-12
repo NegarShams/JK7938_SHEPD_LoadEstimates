@@ -15,6 +15,9 @@ import datetime
 import pandas as pd
 from collections import OrderedDict
 
+# Meta Data
+__version__ = '0.1.0'
+
 # Set to True to run in debug mode and therefore collect all output to window
 DEBUG_MODE = True
 
@@ -291,6 +294,7 @@ class GUIDefaultValues:
 
 	# Indicating the local directory
 	local_directory = os.path.dirname(os.path.realpath(__file__))
+	user_guide = 'JK7938-02 PSSE Load Estimate Importing Tool - Work Instruction.pdf'
 	img_pth_psc_main = os.path.join(local_directory, 'PSC Logo RGB Vertical.png')
 	img_pth_psc_window = os.path.join(local_directory, 'PSC Logo no tag-1200.gif')
 	img_pth_wpd_main = os.path.join(local_directory, 'WPD Midlands English.jpg')
