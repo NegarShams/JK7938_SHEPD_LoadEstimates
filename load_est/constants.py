@@ -71,10 +71,12 @@ class XlFileConstants:
 	excel_ws_name = 'MASTER Based on SubstationLoad'
 	sheet1 = 'Complete Load Data'
 	sheet2 = 'Missing Load Data'
+	sheet3 = 'Amended Load Data'
 
 	# define good data and bad data dataframes
 	good_data = pd.DataFrame()
 	bad_data = pd.DataFrame()
+	#amend_data=pd.DataFrame() #suggested data in place of missing data
 
 	# define columns from spreadsheet
 	gsp_col_no = 0
@@ -108,6 +110,14 @@ class XlFileConstants:
 	def __init__(self):
 		pass
 
+ # class amend:
+	#  estimate=False
+ #
+	#  def __init__(self):
+	# 	 """
+	#  		Just to avoid error message
+	#  	"""
+	# 	 pass
 
 class SavedParamsStrings:
 

@@ -26,6 +26,7 @@ from collections import OrderedDict
 import load_est.psse as psse
 import load_est.constants as constants
 import Load_Estimates_to_PSSE
+import dataframe_maker_modifier
 
 
 class CustomStyles:
@@ -227,13 +228,13 @@ class MainGUI:
 
 		# year drop down options
 		self.load_year_selected = Tk.StringVar()
-		self.load_year_list = constants.General.years_list
+		self.load_year_list = ['N/A']
 		self.load_year_om = None
 		self.load_year_om_lbl = ttk.Label()
 
 		# season drop down options
 		self.load_demand_scaling_selected = Tk.StringVar()
-		self.load_demand_scaling_list = constants.General.demand_scaling_list
+		self.load_demand_scaling_list = ['N/A']
 		self.load_demand_scaling_om = None
 		self.load_demand_scaling_om_lbl = ttk.Label()
 
@@ -248,7 +249,7 @@ class MainGUI:
 		self.load_zones_selected = dict()
 
 		self.load_boolvar_gsp = dict()
-		self.load_gsps = constants.General.scalable_GSP_list
+		self.load_gsps = ['N/A']
 		self.load_gsps_selected = list()
 
 		# ---------------------------------------- GENERATION SCALING OPTIONS:------------------------------------------
@@ -401,7 +402,7 @@ class MainGUI:
 
 	def create_load_options(self):
 		"""
-		Function to create the load scaling options
+		Function to create the load scaling options for selection of different years
 		:return:
 		"""
 		# add Load Scaling Options: label
@@ -438,15 +439,6 @@ class MainGUI:
 		# add drop down list for year
 		self.load_year_selected = Tk.StringVar(self.master)
 
-		# use the year_list if it has values otherwise display N/A
-		if constants.General.years_list:
-			self.load_year_list = constants.General.years_list
-		else:
-			self.load_year_list = ['N/A']
-
-		# set the the first entry in the year list
-		self.load_year_selected.set(self.load_year_list[0])
-
 		# add label for year drop down box, # grey out text initially
 		self.load_year_om_lbl = ttk.Label(master=self.load_labelframe, text='Year: ', style=self.styles.label_general)
 		self.load_year_om_lbl.grid(row=self.row(), column=self.col(), rowspan=1, sticky=Tk.E, padx=self.xpad)
@@ -465,13 +457,6 @@ class MainGUI:
 		self._col = 0
 		# add drop down list for season
 		self.load_demand_scaling_selected = Tk.StringVar(self.master)
-
-		# if values in the demand scaling list other wise display N/A
-		if constants.General.demand_scaling_list:
-			self.load_demand_scaling_list = constants.General.demand_scaling_list
-		else:
-			self.load_demand_scaling_list = ['N/A']
-		self.load_demand_scaling_selected.set(self.load_demand_scaling_list[0])
 
 		# add demand scaling label, grey out text initially
 		self.load_demand_scaling_om_lbl = ttk.Label(
@@ -1253,7 +1238,10 @@ class MainGUI:
 			self.load_estimates_xl = file_path
 
 			# process excel file
-			Load_Estimates_to_PSSE.process_load_estimates_xl(self.load_estimates_xl)
+			df_modified=dataframe_maker_modifier.dataframe_maker_modifier(self.load_estimates_xl)
+			# todo: add one function to load a dilled df_modified
+			k=1
+			self.set_gui_param(df_modified)
 
 			# Update command and radio button status
 			self.cmd_select_sav_case.configure(state=Tk.NORMAL)

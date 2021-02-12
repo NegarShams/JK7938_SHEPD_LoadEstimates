@@ -651,6 +651,10 @@ def process_load_estimates_xl(xl_path):
 
 	# load worksheet into dataframe
 	raw_dataframe = sse_load_xl_to_df(xl_path, constants.XlFileConstants.excel_ws_name)
+	# todo: add a data_frame_approach function (xl_path) which gives out df_mofidied and saves the excel file witgh all data comparison/good/bad data
+	# todo: function to load from dill
+	# todo: add another function which gets raw_dataframe and modified data frame plus a variable to choose between aggregate or
+	#  real powers and gives out a df with the same format as raw_dataframe but with modifed values.
 
 	# extract individual GSPs
 	network_df_dict = extract_gsp_dfs(raw_dataframe)
@@ -665,51 +669,12 @@ def process_load_estimates_xl(xl_path):
 		os.mkdir(params_folder)
 
 	# create new excel file name in the example folder and write the good data and bad data to separate sheets
-	file_path = os.path.join(
-		constants.General.cur_path,
-		constants.XlFileConstants.params_folder,
-		constants.XlFileConstants.xl_checks_file_name
-	)
-	with pd.ExcelWriter(file_path) as writer:
-		constants.XlFileConstants.good_data.to_excel(writer, sheet_name=constants.XlFileConstants.sheet1) # is good and bad data empty dataframes at this stage?
-		constants.XlFileConstants.bad_data.to_excel(writer, sheet_name=constants.XlFileConstants.sheet2)
-		#constants.XlFileConstants.amend_data.to_excel(writer, sheet_name=constants.XlFileConstants.sheet3)
-		worksheet1 = writer.sheets[constants.XlFileConstants.sheet1]
-		worksheet1.set_tab_color('green')
-		worksheet1 = writer.sheets[constants.XlFileConstants.sheet2]
-		worksheet1.set_tab_color('red')
-		#worksheet1 = writer.sheets[constants.XlFileConstants.sheet3]
-		# worksheet1.set_tab_color('yellow')
+
 
 	# Create a dictionary to save the params after reading in excel file
-	params_dict = create_params_pkl(station_dict, xl_path)
-	# params_dict[constants.SavedParamsStrings.station_dict_str] = station_dict
-	# params_dict[constants.SavedParamsStrings.xl_file_name] = os.path.basename(xl_path)
-	# params_dict[constants.SavedParamsStrings.loads_complete_str] = constants.XlFileConstants.bad_data.empty
-	#
-	# # use the keys from the first station object for years list and demand scaling list
-	# params_dict[constants.SavedParamsStrings.years_list_str] = \
-	# 	sorted(station_dict[0].load_forecast_dict.keys())
-	# params_dict[constants.SavedParamsStrings.demand_scaling_list_str] = \
-	# 	sorted(station_dict[0].seasonal_percent_dict.keys())
-
-	# # generate a list of scalable GSP
-	# temp_list = list()
-	# for key, gsp in station_dict.iteritems():
-	# 	if gsp.gsp_scalable:
-	# 		temp_list.append(gsp.gsp)
-	# params_dict[constants.SavedParamsStrings.scalable_GSP_list_str] = sorted(temp_list)
-
-	# # save a pickle/dill file of the params dict to speed up processing later
-	# with open(
-	# 		os.path.join(
-	# 			constants.General.cur_path,
-	# 			constants.XlFileConstants.example_folder,
-	# 			constants.SavedParamsStrings.params_file_name), 'wb') as f:
-	# 	dill.dump(params_dict, f)
-
-	# update constants from params_dict
-	set_params_constants(params_dict)
+	## params_dict = create_params_pkl(station_dict, xl_path)
+	# todo: write a function to set the parameter from modified df
+	#set_params_constants(params_dict)
 
 
 def create_params_pkl(station_dict, xl_path):
@@ -823,7 +788,6 @@ if __name__ == '__main__':
 	# init_psse.initialise_psse()
 
 	gui = load_est.gui.MainGUI()
-	gui=load_est.
 
 	logging.shutdown()
 
