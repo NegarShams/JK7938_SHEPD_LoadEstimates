@@ -1173,10 +1173,10 @@ class MainGUI:
 			load_estimates_xl = file_path
 
 			# process excel file
-			df_modified = dataframe_maker_modifier.dataframe_maker_modifier(load_estimates_xl)
+			df_modified = dataframe_maker_modifier.main(load_estimates_xl)
 			# todo: add one function to load a dilled df_modified
 			# TODO: To be completed
-			# self.set_gui_param(df_modified)
+			self.set_gui_param(df_modified)
 
 			# Update command and radio button status
 			self.cmd_select_sav_case.configure(state=Tk.NORMAL)
