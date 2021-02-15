@@ -16,8 +16,6 @@ import tkMessageBox
 import os
 import logging
 
-import math
-import datetime
 import webbrowser
 from PIL import Image, ImageTk
 from collections import OrderedDict
@@ -55,11 +53,8 @@ class CustomStyles:
 		# Styles for labels
 		self.label_general = 'TLabel'
 		self.label_lbl_frame = 'LabelFrame.TLabel'
-		self.label_res = 'Result.TLabel'
-		self.label_numgens = 'Gens.TLabel'
 		self.label_mainheading = 'MainHeading.TLabel'
 		self.label_subheading = 'SubHeading.TLabel'
-		self.label_subnames = 'SubstationNames.TLabel'
 		self.label_version_number = 'Version.TLabel'
 		self.label_notes = 'Notes.TLabel'
 		self.label_psc_info = 'PSCInfo.TLabel'
@@ -145,11 +140,34 @@ class CustomStyles:
 		s.configure(self.lbl_frame, font=('courier', 15, 'bold'), foreground='blue', background=bg_color)
 
 
+def enable_radio_buttons(radio_btn_list, enable=True):
+	"""
+		Function to enable or disable radio buttons that are stored in radio_btn_list
+	:param radio_btn_list: list of radio button widgets
+	:param enable: True or False
+	:return:
+	"""
+
+	if enable:
+		for radio_btn in radio_btn_list:
+			radio_btn.config(state=Tk.NORMAL)
+	else:
+		for radio_btn in radio_btn_list:
+			radio_btn.config(state=Tk.DISABLED)
+
+	return None
+
+
 class MainGUI:
 	"""
 		Main class to produce the GUI
 		Allows the user to select the busbars and methodology to be applied in the fault current calculations
 	"""
+	# General constants which need to be initialised
+	_row = 0
+	_col = 0
+	xpad = 5
+	ypad = 5
 
 	def __init__(self, title=constants.GUI.gui_name):
 		"""
@@ -175,13 +193,6 @@ class MainGUI:
 		self.styles = CustomStyles()
 		self.styles.configure_styles()
 
-		# self.fault_times = list()
-		# General constants which need to be initialised
-		self._row = 0
-		self._col = 0
-		self.xpad = 5
-		self.ypad = 5
-
 		# Target file that results will be exported to
 		self.target_file = str()
 		self.results_pth = os.path.dirname(os.path.realpath(__file__))
@@ -192,27 +203,18 @@ class MainGUI:
 		self.cmd_import_load_estimates = ttk.Button()
 		self.cmd_scale_load_gen = ttk.Button()
 
-		# PSC logo constants
-		self.hyp_help_instructions = ttk.Label()
-		self.psc_logo_wm = Tk.PhotoImage()
-		self.psc_logo = Tk.Label()
+		# PSC logo constants (required so position can be moved)
 		self.psc_info = Tk.Label()
 		self.hyp_user_manual = ttk.Label()
 		self.version_tool_lbl = ttk.Label()
 
 		# excel and sav case labels
-		self.load_estimates_xl = str()
-		self.current_xl_lbl = ttk.Label()
 		self.current_xl_path_lbl = ttk.Label()
-		self.load_complete_lbl = ttk.Label()
 		self.load_complete_lbl_t_f = ttk.Label()
 
 		# PSSE variables
 		self.sav_case = str()
-		self.psse_case = None
 		self.psse_con = None
-		self.sav_new_psse_case_boolvar = Tk.BooleanVar()
-		self.sav_new_psse_case_chkbox = ttk.Checkbutton()
 
 		# ---------------------------------------- LOAD SCALING OPTIONS:------------------------------------------------
 		# Load Options label frame constants
@@ -290,7 +292,6 @@ class MainGUI:
 		Function to update initialise GUI variables to create the GUI
 		:return:
 		"""
-		# todo row/col quite hard coded
 		# Add PSC logo with hyperlink to the website
 		self.add_psc_logo(row=self.row(), col=0)
 
@@ -300,10 +301,9 @@ class MainGUI:
 			row=self.row(), col=3)
 
 		# add excel summary labels:
-		self.add_xl_summary_lbls()
+		self.add_xl_summary_labels()
 
 		# Add PSC logo with hyperlink to the website
-		# todo change this to a SSE logo
 		self.add_psc_logo(row=0, col=5)
 
 		# Determine label for button based on the SAV case being loaded
@@ -333,13 +333,6 @@ class MainGUI:
 			row=self.row(1), col=3)
 		self.cmd_scale_load_gen.configure(state=Tk.DISABLED)
 
-		# self.sav_new_psse_case_chkbox = ttk.Checkbutton(
-		# 	self.master, text='Save new case after scaling', variable=self.sav_new_psse_case_boolvar,
-		# 	style=self.styles.check_buttons
-		# )
-		# self.sav_new_psse_case_chkbox.grid(row=self.row(1), column=3, columnspan=2, padx=5, pady=5)
-		# self.sav_new_psse_case_chkbox.configure(state=Tk.DISABLED)
-
 		# Add PSC logo in Windows Manager
 		self.add_psc_logo_wm()
 
@@ -351,14 +344,14 @@ class MainGUI:
 
 		return
 
-	def add_xl_summary_lbls(self):
+	def add_xl_summary_labels(self):
 		"""
 		Function to add summary labels about the loaded excel file
 		:return:
 		"""
 		# add Current File Loaded label
-		self.current_xl_lbl = ttk.Label(self.master, text='Current File Loaded:', style=self.styles.label_general)
-		self.current_xl_lbl.grid(row=self.row(1), column=3)
+		current_xl_lbl = ttk.Label(self.master, text='Current File Loaded:', style=self.styles.label_general)
+		current_xl_lbl.grid(row=self.row(1), column=3)
 
 		if constants.General.xl_file_name:
 			xl_lbl = constants.General.xl_file_name
@@ -381,8 +374,8 @@ class MainGUI:
 		self.current_xl_path_lbl.grid(row=self.row(), column=4)
 
 		# add load complete label path label
-		self.load_complete_lbl = ttk.Label(self.master, text='All loads error free:', style=self.styles.label_general)
-		self.load_complete_lbl.grid(row=self.row(1), column=3)
+		load_complete_lbl = ttk.Label(self.master, text='All loads error free:', style=self.styles.label_general)
+		load_complete_lbl.grid(row=self.row(1), column=3)
 
 		# add True/False label
 		self.load_complete_lbl_t_f = ttk.Label(
@@ -434,7 +427,7 @@ class MainGUI:
 			self.row(1)
 
 		# disable all radio buttons in load_radio_btn_list
-		self.enable_radio_buttons(self.load_radio_btn_list, enable=False)
+		enable_radio_buttons(self.load_radio_btn_list, enable=False)
 
 		# add drop down list for year
 		self.load_year_selected = Tk.StringVar(self.master)
@@ -449,7 +442,7 @@ class MainGUI:
 			row=self.row(),
 			col=self.col(1),
 			var=self.load_year_selected,
-			list=self.load_year_list,
+			values_list=self.load_year_list,
 			location=self.load_labelframe
 		)
 		self.load_year_om.configure(state=Tk.DISABLED)
@@ -468,7 +461,7 @@ class MainGUI:
 		self.load_demand_scaling_om = self.add_combobox(
 			row=self.row(), col=self.col(1),
 			var=self.load_demand_scaling_selected,
-			list=self.load_demand_scaling_list,
+			values_list=self.load_demand_scaling_list,
 			location=self.load_labelframe
 		)
 		self.load_demand_scaling_om.configure(state=Tk.DISABLED)
@@ -506,7 +499,7 @@ class MainGUI:
 			self.row(1)
 
 		# disable all radio buttons in gen_radio_btn_list
-		self.enable_radio_buttons(self.gen_radio_btn_list, enable=False)
+		enable_radio_buttons(self.gen_radio_btn_list, enable=False)
 
 		# add entry box for generator scaling percentage
 		self.add_entry_gen_percent(row=self.row(), col=0)
@@ -531,24 +524,27 @@ class MainGUI:
 		self._col += i
 		return self._col
 
-	def add_combobox(self, row, col, var, list, location=None):
+	def add_combobox(self, row, col, var, values_list, location=None):
 		"""
 			Function to all a list of optimisation options which will become enabled if the user selects to run a
 			virtual statcom study
 		:param int row: Row number to use
 		:param int col: Column number to use
+		:param Tk.StringVar var:  Variable to link with combobox
+		:param list values_list:  List of values to use as an input
+		:param Tk.Labelframe location:  Parent Tk window in which to create drop down list
 		:rtype Tk.OptionMenu
 		:return dropdown_optimisaiton_option:
 		"""
 
 		# Check whether there is a successfully loaded SAV case to enable the list option
 		if location is None:
-			var.set(list[0])
+			var.set(values_list[0])
 			# Create the drop down list to be shown in the GUI
 			w = ttk.Combobox(
 				self.master,
 				textvariable=var,
-				values=list,
+				values=values_list,
 				style=self.styles.rating_options,
 				justify=Tk.CENTER
 			)
@@ -557,13 +553,13 @@ class MainGUI:
 				padx=self.xpad, pady=self.ypad, sticky=Tk.W+Tk.E,
 			)
 		else:
-			var.set(list[0])
+			var.set(values_list[0])
 			# Create the drop down list to be shown in the GUI
 			# w = ttk.Combobox(location, var, list[0], *list, style=self.styles.rating_options)
 			w = ttk.Combobox(
 				location,
 				textvariable=var,
-				values=list,
+				values=values_list,
 				style=self.styles.rating_options,
 				justify=Tk.CENTER,
 			)
@@ -580,12 +576,14 @@ class MainGUI:
 			Function just adds the command button to the GUI which is used for selecting the SAV case
 		:param int row: Row number to use
 		:param int col: Column number to use
+		:param str label:  Label to use
+		:param cmd:  Function to call when button clicked
+		:param Tk.Frame location:  Parent window to use
 		:return None:
 		"""
 		if location is None:
 			# Create button and assign to Grid
 			cmd_btn = ttk.Button(self.master, text=label, command=cmd, style=self.styles.cmd_buttons)
-			# self.cmd_select_sav_case.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E)
 			cmd_btn.grid(row=row, column=col, columnspan=2, sticky=Tk.W + Tk.E, padx=self.xpad, pady=self.ypad)
 			# CreateToolTip(widget=self.cmd_select_sav_case, text=(
 			# 	'Select the SAV case for which fault studies should be run.'
@@ -679,6 +677,7 @@ class MainGUI:
 		# print(self.gen_zones_selected)
 		# print
 
+		# Reset to empty entries
 		self.load_gsps_selected = list()
 		self.load_zones_selected = dict()
 		self.gen_zones_selected = dict()
@@ -753,23 +752,6 @@ class MainGUI:
 
 		# store last radio button selected in gen_prev_radio_opt
 		self.gen_prev_radio_opt = self.gen_radio_opt_sel.get()
-
-		return None
-
-	def enable_radio_buttons(self, radio_btn_list, enable=True):
-		"""
-		Function to enable or disable radio buttons that are stored in radio_btn_list
-		:param radio_btn_list: list of radio button widgets
-		:param enable: True or False
-		:return:
-		"""
-
-		if enable:
-			for radio_btn in radio_btn_list:
-				radio_btn.config(state=Tk.NORMAL)
-		else:
-			for radio_btn in radio_btn_list:
-				radio_btn.config(state=Tk.DISABLED)
 
 		return None
 
@@ -868,10 +850,14 @@ class MainGUI:
 		return None
 
 	def create_gen_select_frame(self):
+		"""
+			Create a frame for selection of generation data
+		"""
 
-		lbl=''
 		if self.gen_radio_opt_sel.get() == 2:
 			lbl = 'Select Zone(s):'
+		else:
+			lbl = str()
 
 		if self.gen_select_frame is None:
 			master_col, master_rows,  = self.master.grid_size()
@@ -1062,66 +1048,15 @@ class MainGUI:
 		# ))
 		return None
 
-	def add_reload_sav(self, row, col):
-		"""
-			Function to add a tick box on whether the user wants to reload the SAV case
-		:param int row:  Row number to use
-		:param int col:  Column number to use
-		:return None:
-		"""
-		lbl = 'Reload initial SAV case on completion'
-		self.bo_reload_sav.set(constants.GUI.reload_sav_case)
-		# Add tick box
-		check_button = Tk.Checkbutton(
-			self.master, text=lbl, variable=self.bo_reload_sav
-		)
-		check_button.grid(row=row, column=col, columnspan=2, sticky=Tk.W)
-		CreateToolTip(widget=check_button, text=(
-			'If selected the SAV case will be reloaded at the end of this study, if not then the model will as the '
-			'study finished which may be useful for debugging purposes.'
-		))
-		return None
-
-	def add_open_excel(self, row, col):
-		"""
-			Function to add a tick box on whether the user wants to open the Excel file of results at the end
-			:param int row:  Row number to use
-			:param int col:  Column number to use
-			:return None:
-		"""
-		lbl = 'Open exported Excel file'
-		self.bo_open_excel.set(constants.GUI.open_excel)
-		# Add tick box
-		check_button = Tk.Checkbutton(
-			self.master, text=lbl, variable=self.bo_open_excel
-		)
-		check_button.grid(row=row, column=col, columnspan=2, sticky=Tk.W)
-		CreateToolTip(widget=check_button, text=(
-			'If selected the exported excel file will be loaded and visible on completion of the study.'
-		))
-		return None
-
-	def add_hyp_help_instructions(self, row, col):
-		"""
-			Function just adds the hyperlink to the GUI which is used for loading the work instructions
-		:param int row: Row number to use
-		:param int col: Column number to use
-		:return: None
-		"""
-		# Create Help link and reference to the work instructions document
-		self.hyp_help_instructions = Tk.Label(self.master, text='Help Instructions', fg='Blue', cursor='hand2')
-		self.hyp_help_instructions.grid(row=row, column=col, sticky=Tk.W)
-		self.hyp_help_instructions.bind('<Button - 1>', lambda e: webbrowser.open_new(constants.GUI.local_directory + '\\JK7938-01-00 PSSE G74 Fault Current Tool - Work Instruction.pdf'))
-		return None
-
 	def add_psc_logo_wm(self):
 		"""
 			Function just adds the PSC logo to the windows manager in GUI
 		:return: None
 		"""
 		# Create the PSC logo for including in the windows manager
-		self.psc_logo_wm = Tk.PhotoImage(file=constants.GUI.img_pth_window)
-		self.master.tk.call('wm', 'iconphoto', self.master._w, self.psc_logo_wm)
+		psc_logo_wm = Tk.PhotoImage(file=constants.GUI.img_pth_window)
+		# noinspection PyProtectedMember
+		self.master.tk.call('wm', 'iconphoto', self.master._w, psc_logo_wm)
 		return None
 
 	def add_psc_info(self, row, col):
@@ -1150,10 +1085,10 @@ class MainGUI:
 		img = Image.open(constants.GUI.img_pth_main)
 		img.thumbnail(constants.GUI.img_size)
 		img = ImageTk.PhotoImage(img)
-		self.psc_logo = Tk.Label(self.master, image=img, cursor='hand2', justify='center', compound='top')
-		self.psc_logo.photo = img
-		self.psc_logo.grid(row=row, column=col, columnspan=3, rowspan=3, pady=self.ypad)
-		self.psc_logo.bind('<Button - 1>', lambda e: webbrowser.open_new('https://www.pscconsulting.com/'))
+		psc_logo = Tk.Label(self.master, image=img, cursor='hand2', justify='center', compound='top')
+		psc_logo.photo = img
+		psc_logo.grid(row=row, column=col, columnspan=3, rowspan=3, pady=self.ypad)
+		psc_logo.bind('<Button - 1>', lambda e: webbrowser.open_new('https://www.pscconsulting.com/'))
 		return None
 
 	def add_psc_phone(self, row, col):
@@ -1203,8 +1138,8 @@ class MainGUI:
 
 			# Update command and radio button status
 			self.cmd_select_sav_case.config(text=lbl_sav_button)
-			self.enable_radio_buttons(self.load_radio_btn_list)
-			self.enable_radio_buttons(self.gen_radio_btn_list)
+			enable_radio_buttons(self.load_radio_btn_list)
+			enable_radio_buttons(self.gen_radio_btn_list)
 			self.cmd_scale_load_gen.configure(state=Tk.NORMAL)
 
 			# # If successful then get the zones and ratings from the loaded PSSE case and enable the buttons
@@ -1235,17 +1170,21 @@ class MainGUI:
 
 		if file_path:
 			# set load estimates to file path
-			self.load_estimates_xl = file_path
+			load_estimates_xl = file_path
 
 			# process excel file
-			df_modified=dataframe_maker_modifier.dataframe_maker_modifier(self.load_estimates_xl)
+			df_modified = dataframe_maker_modifier.dataframe_maker_modifier(load_estimates_xl)
 			# todo: add one function to load a dilled df_modified
-			k=1
-			self.set_gui_param(df_modified)
+			# TODO: To be completed
+			# self.set_gui_param(df_modified)
 
 			# Update command and radio button status
 			self.cmd_select_sav_case.configure(state=Tk.NORMAL)
-			self.current_xl_path_lbl.configure(text=constants.General.xl_file_name)
+
+			# Get just file name rather than full path
+			xl_file_name = os.path.basename(load_estimates_xl)
+			self.current_xl_path_lbl.configure(text=xl_file_name)
+
 			if constants.General.loads_complete:
 				self.load_complete_lbl_t_f.configure(text=constants.General.loads_complete_t_str, foreground='green')
 				self.load_complete_lbl_t_f.unbind("<Button-1>")
@@ -1264,77 +1203,6 @@ class MainGUI:
 			self.load_demand_scaling_om.configure(values=constants.General.demand_scaling_list)
 
 		return None
-
-	# def process(self):
-	# 	"""
-	# 		Function sorts the files list to remove any duplicates and then closes GUI window
-	# 	:return: None
-	# 	"""
-	# 	# Ask user to select target folder
-	# 	# target_file = tkFileDialog.asksaveasfilename(
-	# 	# 	initialdir=self.results_pth,
-	# 	# 	defaultextension='.xlsx',
-	# 	# 	filetypes=constants.General.file_types,
-	# 	# 	title='Please select file for results')
-	# 	#
-	# 	# if not target_file:
-	# 	# 	# Confirm a target file has actually been selected
-	# 	# 	_ = tkMessageBox.showerror(
-	# 	# 		title='No results file selected',
-	# 	# 		message='Please select a results file to save the fault currents to!'
-	# 	# 	)
-	# 	# elif not self.sav_case:
-	# 	# 	# Confirm SAV case has actually been provided
-	# 	# 	self.logger.error('No SAV case has been selected, please select SAV case')
-	# 	# 	# Display pop-up warning message
-	# 	# 	# Ask user to confirm that they actually want to close the window
-	# 	# 	_ = tkMessageBox.showerror(
-	# 	# 		title='No SAV case',
-	# 	# 		message='No SAV case has been selected for fault studies to be run on!'
-	# 	# 	)
-	# 	#
-	# 	# else:
-	# 	# 	# Save path to target file
-	# 	# 	self.target_file = target_file
-	# 	# 	# If SAV case has been selected the continue with study
-	# 	# 	# Process the fault times into useful format converting into floats
-	# 	# 	fault_times = self.var_fault_times_list.get()
-	# 	# 	fault_times = fault_times.split(',')
-	# 	# 	# Loop through each value converting to a float
-	# 	# 	# TODO: Add in more error processing here
-	# 	# 	self.fault_times = list()
-	# 	# 	for val in fault_times:
-	# 	# 		try:
-	# 	# 			new_val = float(val)
-	# 	# 			self.fault_times.append(new_val)
-	# 	# 		except ValueError:
-	# 	# 			self.logger.warning(
-	# 	# 				'Unable to convert the fault time <{}> to a number and so has been skipped'.format(val)
-	# 	# 			)
-	# 	#
-	# 	# 	self.logger.info(
-	# 	# 		(
-	# 	# 			'Faults will be applied at the busbars listed below and results saved to:\n{} \n '
-	# 	# 			'for the fault times: {} seconds.  \nBusbars = \n{}'
-	# 	# 		).format(self.target_file, self.fault_times, self.selected_busbars)
-	# 	# 	)
-	#
-	# 	print self.sav_case
-	#
-	# 	Load_Estimates_to_PSSE.update_loads(
-	# 		self.sav_case,
-	# 		constants.GUI.station_dict,
-	# 		year=self.year_selected.get(),
-	# 		season=self.demand_scaling_selected.get()
-	# 	)
-	#
-	# 	_ = tkMessageBox.showinfo(
-	# 		title='Update Complete',
-	# 		message='PSSE sav case loads updated'
-	# 	)
-	# 	# Destroy GUI
-	# 	# self.master.destroy()
-	# 	return None
 
 	def on_closing(self):
 		"""
@@ -1378,20 +1246,24 @@ class CreateToolTip(object):
 		self.id = None
 		self.tw = None
 
+	# noinspection PyUnusedLocal
 	def enter(self, event=None):
 		del event
 		self.schedule()
 
+	# noinspection PyUnusedLocal
 	def leave(self, event=None):
 		del event
 		self.unschedule()
 		self.hidetip()
 
+	# noinspection PyUnusedLocal
 	def schedule(self, event=None):
 		del event
 		self.unschedule()
 		self.id = self.widget.after(self.wait_time, self.showtip)
 
+	# noinspection PyUnusedLocal
 	def unschedule(self, event=None):
 		del event
 		_id = self.id

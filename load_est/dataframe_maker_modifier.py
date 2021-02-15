@@ -16,14 +16,6 @@ import common_functions as common
 import data_comparison as comparison
 import collections
 
-# GLOBAL constants
-# Target filename to use
-# FILE_NAME_INPUT = common.excel_file_names.FILE_NAME_INPUT
-# #FILE_NAME_OUTPUT = 'Processed Load Estimates_p_non_modified.xlsx'
-# FILE_PTH_INPUT = common.get_local_file_path(file_name=FILE_NAME_INPUT)
-#FILE_PTH_OUTPUT = common.get_local_file_path(file_name=FILE_NAME_OUTPUT)
-
-
 # Functions
 def assign_gsp(df_raw):
     """
