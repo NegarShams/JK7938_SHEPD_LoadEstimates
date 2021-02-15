@@ -236,3 +236,51 @@ def sse_load_xl_to_df(xl_filename, xl_ws_name, headers=True):
 	df.reset_index(drop=True, inplace=True)
 
 	return df
+
+
+def variable_dill_maker(input_name,sheet_name,variable_name):
+	"""
+	Function returns #  gets an excel file name with.xlsx (input_name), the sheet_name, and the variable name which it would be dilled by that name (variable_name+.dill)
+	:param t1:
+	:return y_estimated_df:  a dataframe of the read excel file, also saves the dataframe as a dill
+	"""
+
+	file_pth_input = get_local_file_path(file_name=input_name)
+	df = import_excel(pth_load_est=file_pth_input, sheet_name=sheet_name)
+
+	df = df.reset_index()
+	variable_name_list = [variable_name]
+
+	dill_file_list = ['{}.dill'.format(x) for x in variable_name_list]
+
+	i = 0
+	for n in variable_name_list:
+		with open(get_local_file_path_withfolder(
+			file_name=dill_file_list[i], folder_name=folder_file_names.dill_folder), 'wb') as f:
+			dill.dump(df, f)
+		i += 1
+
+	return df
+
+def get_local_file_path_withfolder(file_name,folder_name):
+	"""
+		Function returns the full path to a file (it gets the new folder as well) which is stored in the same directory as this script
+	:param str file_name:  Name of file
+	:return str file_pth:  Full path to file assuming it exists in this folder
+	"""
+	local_dir = os.path.dirname(os.path.realpath(__file__))
+	file_pth = os.path.join(local_dir,folder_name, file_name)
+
+	return
+
+class folder_file_names:
+	"""
+		Folder names to save data
+	"""
+	dill_folder = 'dills'
+	excel_output_folder = 'excel_output_results'
+	excel_check_data_name='no_match_data.xlsx'
+	excel_final_output_name='Final_Results.xlsx'
+	#variable_list=['df_NG','df_SHEPD','df_MAP','df_MAP_2','df_SHEPD_Filtered','df_SHEPD_with_GSP','df_MAP_3','df_MAP_4']
+	variable_path_dict = collections.OrderedDict()
+	variable_dict = collections.OrderedDict()

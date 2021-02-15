@@ -130,6 +130,7 @@ try:
 	import load_est.psse as psse
 	import load_est.file_handling as file_handling
 	import load_est.gui as gui
+	import load_est.gui_original as gui_original
 except (ImportError, AttributeError):
 	t0 = time.time()
 

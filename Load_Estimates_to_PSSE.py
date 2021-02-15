@@ -823,7 +823,7 @@ if __name__ == '__main__':
 	# init_psse.initialise_psse()
 
 	gui = load_est.gui.MainGUI()
-	gui=load_est.
+	#gui=load_est.gui_original.MainGUI
 
 	logging.shutdown()
 

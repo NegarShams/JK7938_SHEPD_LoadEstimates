@@ -1241,7 +1241,6 @@ class MainGUI:
 			df_modified=dataframe_maker_modifier.dataframe_maker_modifier(self.load_estimates_xl)
 			# todo: add one function to load a dilled df_modified
 			k=1
-
 			self.set_gui_param(df_modified)
 
 			# Update command and radio button status
@@ -1264,24 +1263,78 @@ class MainGUI:
 			self.load_year_om.configure(values=constants.General.years_list)
 			self.load_demand_scaling_om.configure(values=constants.General.demand_scaling_list)
 
-			self.load_gsps = constants.General.scalable_GSP_list
-			self.load_year_om.configure(values=constants.General.years_list)
-			self.load_demand_scaling_om.configure(values=constants.General.demand_scaling_list)
-
 		return None
 
-	def set_gui_param(self,df):
-		"""
-			Function
-		:return None:
-		"""
-		self.load_year_list=df
-		self.demand_scaling_list=df
-		self.load_gsps=df
-
-		return None
-
-
+	# def process(self):
+	# 	"""
+	# 		Function sorts the files list to remove any duplicates and then closes GUI window
+	# 	:return: None
+	# 	"""
+	# 	# Ask user to select target folder
+	# 	# target_file = tkFileDialog.asksaveasfilename(
+	# 	# 	initialdir=self.results_pth,
+	# 	# 	defaultextension='.xlsx',
+	# 	# 	filetypes=constants.General.file_types,
+	# 	# 	title='Please select file for results')
+	# 	#
+	# 	# if not target_file:
+	# 	# 	# Confirm a target file has actually been selected
+	# 	# 	_ = tkMessageBox.showerror(
+	# 	# 		title='No results file selected',
+	# 	# 		message='Please select a results file to save the fault currents to!'
+	# 	# 	)
+	# 	# elif not self.sav_case:
+	# 	# 	# Confirm SAV case has actually been provided
+	# 	# 	self.logger.error('No SAV case has been selected, please select SAV case')
+	# 	# 	# Display pop-up warning message
+	# 	# 	# Ask user to confirm that they actually want to close the window
+	# 	# 	_ = tkMessageBox.showerror(
+	# 	# 		title='No SAV case',
+	# 	# 		message='No SAV case has been selected for fault studies to be run on!'
+	# 	# 	)
+	# 	#
+	# 	# else:
+	# 	# 	# Save path to target file
+	# 	# 	self.target_file = target_file
+	# 	# 	# If SAV case has been selected the continue with study
+	# 	# 	# Process the fault times into useful format converting into floats
+	# 	# 	fault_times = self.var_fault_times_list.get()
+	# 	# 	fault_times = fault_times.split(',')
+	# 	# 	# Loop through each value converting to a float
+	# 	# 	# TODO: Add in more error processing here
+	# 	# 	self.fault_times = list()
+	# 	# 	for val in fault_times:
+	# 	# 		try:
+	# 	# 			new_val = float(val)
+	# 	# 			self.fault_times.append(new_val)
+	# 	# 		except ValueError:
+	# 	# 			self.logger.warning(
+	# 	# 				'Unable to convert the fault time <{}> to a number and so has been skipped'.format(val)
+	# 	# 			)
+	# 	#
+	# 	# 	self.logger.info(
+	# 	# 		(
+	# 	# 			'Faults will be applied at the busbars listed below and results saved to:\n{} \n '
+	# 	# 			'for the fault times: {} seconds.  \nBusbars = \n{}'
+	# 	# 		).format(self.target_file, self.fault_times, self.selected_busbars)
+	# 	# 	)
+	#
+	# 	print self.sav_case
+	#
+	# 	Load_Estimates_to_PSSE.update_loads(
+	# 		self.sav_case,
+	# 		constants.GUI.station_dict,
+	# 		year=self.year_selected.get(),
+	# 		season=self.demand_scaling_selected.get()
+	# 	)
+	#
+	# 	_ = tkMessageBox.showinfo(
+	# 		title='Update Complete',
+	# 		message='PSSE sav case loads updated'
+	# 	)
+	# 	# Destroy GUI
+	# 	# self.master.destroy()
+	# 	return None
 
 	def on_closing(self):
 		"""
