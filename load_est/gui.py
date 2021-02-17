@@ -647,19 +647,19 @@ class MainGUI:
 		# print(self.load_demand_scaling_selected.get())
 		# print
 
-		# if self.load_boolvar_gsp:
+		# if self.load_bool_var_gsp:
 		# 	for gsp in self.load_gsps:
-		# 		if self.load_boolvar_gsp[gsp].get():
+		# 		if self.load_bool_var_gsp[gsp].get():
 		# 			self.load_gsps_selected.append(gsp)
 		#
-		# if self.load_boolvar_zon:
+		# if self.load_bool_var_zone:
 		# 	for zone_num, zone_name in self.zone_dict.iteritems():
-		# 		if self.load_boolvar_zon[zone_num].get():
+		# 		if self.load_bool_var_zone[zone_num].get():
 		# 			self.load_zones_selected[zone_num] = zone_name
 		#
-		# if self.gen_boolvar_zon:
+		# if self.gen_bool_var_zone:
 		# 	for zone_num, zone_name in self.zone_dict.iteritems():
-		# 		if self.gen_boolvar_zon[zone_num].get():
+		# 		if self.gen_bool_var_zone[zone_num].get():
 		# 			self.gen_zones_selected[zone_num] = zone_name
 		#
 		# print ('Load GSPs Selected: '),

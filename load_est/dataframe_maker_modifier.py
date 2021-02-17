@@ -379,6 +379,12 @@ def season_load_filler(df_raw, fill):
 
 		df_raw.loc[idx_change, common.Headers.min_demand] = common.Seasons.primary_min_demand_val
 
+		# TODO: @NS - Add in a new column that introduces Winter Peak = 1.0 so that if the user selects Winter Peak in
+		# TODO: @NS... in the GUI it easily allows the user to select the appropriate values
+		# TODO: @NS... I've had a guess at what will be needed but please check this doesn't cause issues anywhere else
+		# Winter peak demand values will all be 100% of the value for that year.
+		df_raw.loc[:, common.Headers.winter_peak] = 1.0
+
 	return df_raw
 
 

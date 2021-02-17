@@ -115,9 +115,11 @@ class Headers:
 	name = 'Name'
 	voltage = 'Voltage Ratio'
 	psse_1 = 'PSS/E Bus #1'
+	winter_peak = 'Winter Peak'
 	spring_autumn = 'Spring/Autumn'
 	summer = 'Summer'
 	min_demand = 'Minimum Demand'
+	seasons = (winter_peak, spring_autumn, summer, min_demand)
 
 	# Columns to define attributes
 	sub_gsp = 'Sub_GSP'

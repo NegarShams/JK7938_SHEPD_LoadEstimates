@@ -238,7 +238,7 @@ class MainGUI:
 
 		# season drop down options
 		self.load_demand_scaling_selected = Tk.StringVar()
-		self.load_demand_scaling_list = ['N/A']
+		self.load_demand_scaling_list = list(common_functions.Headers.seasons)
 		self.load_demand_scaling_om = None
 		self.load_demand_scaling_om_lbl = ttk.Label()
 
@@ -249,10 +249,10 @@ class MainGUI:
 		self.load_entry_frame = ttk.Frame()
 		self.load_scrollbar = ttk.Scrollbar()
 		# Load selector zone constants
-		self.load_boolvar_zon = dict()
+		self.load_bool_var_zone = dict()
 		self.load_zones_selected = dict()
 
-		self.load_boolvar_gsp = dict()
+		self.load_bool_var_gsp = dict()
 		self.load_gsps = ['N/A']
 		self.load_gsps_selected = list()
 
@@ -271,7 +271,7 @@ class MainGUI:
 		self.gen_entry_frame = ttk.Frame()
 		self.gen_scrollbar = ttk.Scrollbar()
 		# gen selector zone constants
-		self.gen_boolvar_zon = dict()
+		self.gen_bool_var_zone = dict()
 		self.gen_zones_selected = dict()
 
 		self.gen_percent_var = Tk.DoubleVar()
@@ -536,7 +536,7 @@ class MainGUI:
 		:param list values_list:  List of values to use as an input
 		:param Tk.Labelframe location:  Parent Tk window in which to create drop down list
 		:rtype Tk.OptionMenu
-		:return dropdown_optimisaiton_option:
+		:return dropdown_optimisation_option:
 		"""
 
 		# Check whether there is a successfully loaded SAV case to enable the list option
@@ -651,19 +651,19 @@ class MainGUI:
 		# print(self.load_demand_scaling_selected.get())
 		# print
 
-		# if self.load_boolvar_gsp:
+		# if self.load_bool_var_gsp:
 		# 	for gsp in self.load_gsps:
-		# 		if self.load_boolvar_gsp[gsp].get():
+		# 		if self.load_bool_var_gsp[gsp].get():
 		# 			self.load_gsps_selected.append(gsp)
 		#
-		# if self.load_boolvar_zon:
+		# if self.load_bool_var_zone:
 		# 	for zone_num, zone_name in self.zone_dict.iteritems():
-		# 		if self.load_boolvar_zon[zone_num].get():
+		# 		if self.load_bool_var_zone[zone_num].get():
 		# 			self.load_zones_selected[zone_num] = zone_name
 		#
-		# if self.gen_boolvar_zon:
+		# if self.gen_bool_var_zone:
 		# 	for zone_num, zone_name in self.zone_dict.iteritems():
-		# 		if self.gen_boolvar_zon[zone_num].get():
+		# 		if self.gen_bool_var_zone[zone_num].get():
 		# 			self.gen_zones_selected[zone_num] = zone_name
 		#
 		# print ('Load GSPs Selected: '),
@@ -810,15 +810,15 @@ class MainGUI:
 			if len(self.load_entry_frame.winfo_children()) > 0:
 				for widget in self.load_entry_frame.winfo_children():
 					widget.destroy()
-			self.load_boolvar_gsp = dict()
-			self.load_boolvar_zon = dict()
-			self.gen_boolvar_zon = dict()
+			self.load_bool_var_gsp = dict()
+			self.load_bool_var_zone = dict()
+			self.gen_bool_var_zone = dict()
 
 		if self.load_radio_opt_sel.get() == 2:
 			# 'Select GSP(s):'
 			for gsp in self.load_gsps:
-				self.load_boolvar_gsp[gsp] = Tk.BooleanVar()
-				self.load_boolvar_gsp[gsp].set(0)
+				self.load_bool_var_gsp[gsp] = Tk.BooleanVar()
+				self.load_bool_var_gsp[gsp].set(0)
 
 			counter = 0
 			for gsp in self.load_gsps:
@@ -827,7 +827,7 @@ class MainGUI:
 				check_button = ttk.Checkbutton(
 					self.load_entry_frame,
 					text=lbl,
-					variable=self.load_boolvar_gsp[gsp],
+					variable=self.load_bool_var_gsp[gsp],
 					style=self.styles.check_buttons_framed
 				)
 				check_button.grid(row=counter, column=0, sticky="w")
@@ -837,8 +837,8 @@ class MainGUI:
 		if self.load_radio_opt_sel.get() == 3:
 			# 'Select Zone(s):'
 			for zone_num, zone_name in self.zone_dict.iteritems():
-				self.load_boolvar_zon[zone_num] = Tk.BooleanVar()
-				self.load_boolvar_zon[zone_num].set(0)
+				self.load_bool_var_zone[zone_num] = Tk.BooleanVar()
+				self.load_bool_var_zone[zone_num].set(0)
 
 			counter = 0
 			for zone_num, zone_name in self.zone_dict.iteritems():
@@ -846,7 +846,7 @@ class MainGUI:
 				check_button = ttk.Checkbutton(
 					self.load_entry_frame,
 					text=lbl,
-					variable=self.load_boolvar_zon[zone_num],
+					variable=self.load_bool_var_zone[zone_num],
 					style=self.styles.check_buttons_framed
 				)
 				check_button.grid(row=counter, column=0, sticky="w")
@@ -913,8 +913,8 @@ class MainGUI:
 			self.gen_side_lbl.config(text=lbl)
 			# 'Select Zone(s):'
 			for zone_num, zone_name in self.zone_dict.iteritems():
-				self.gen_boolvar_zon[zone_num] = Tk.BooleanVar()
-				self.gen_boolvar_zon[zone_num].set(0)
+				self.gen_bool_var_zone[zone_num] = Tk.BooleanVar()
+				self.gen_bool_var_zone[zone_num].set(0)
 
 			counter = 0
 			for zone_num, zone_name in self.zone_dict.iteritems():
@@ -922,7 +922,7 @@ class MainGUI:
 				check_button = ttk.Checkbutton(
 					self.gen_entry_frame,
 					text=lbl,
-					variable=self.gen_boolvar_zon[zone_num],
+					variable=self.gen_bool_var_zone[zone_num],
 					style=self.styles.check_buttons_framed
 				)
 				check_button.grid(row=counter, column=0, sticky="w")
@@ -981,9 +981,9 @@ class MainGUI:
 			# reset variables
 			self.load_side_lbl = None
 			self.load_select_frame = None
-			self.load_boolvar_gsp = dict()
-			self.load_boolvar_zon = dict()
-			self.gen_boolvar_zon = dict()
+			self.load_bool_var_gsp = dict()
+			self.load_bool_var_zone = dict()
+			self.gen_bool_var_zone = dict()
 
 		return None
 
@@ -1002,9 +1002,9 @@ class MainGUI:
 			# reset variables
 			self.gen_side_lbl = None
 			self.gen_select_frame = None
-			self.load_boolvar_gsp = dict()
-			self.load_boolvar_zon = dict()
-			self.gen_boolvar_zon = dict()
+			self.load_bool_var_gsp = dict()
+			self.load_bool_var_zone = dict()
+			self.gen_bool_var_zone = dict()
 
 		return None
 
@@ -1020,8 +1020,6 @@ class MainGUI:
 		# change grid location of widgets
 		self.cmd_scale_load_gen.grid(
 			row=master_rows + 1, column=self.cmd_scale_load_gen.grid_info()['column'])
-		# self.sav_new_psse_case_chkbox.grid(
-		# 	row=master_rows + 2, column=self.sav_new_psse_case_chkbox.grid_info()['column'])
 		self.psc_info.grid(
 			row=master_rows+3, column=self.psc_info.grid_info()['column'])
 		self.hyp_user_manual.grid(
@@ -1240,10 +1238,20 @@ class MainGUI:
 		# TODO: @NS - Extract list of years from the DataFrame, use of common.adjust_years
 		# Find the years being considered for the forecast
 		self.load_year_list = common_functions.adjust_years(headers_list=list(df.columns))
-		self.demand_scaling_list=df
-		self.load_gsps=df
 
+		# The list of seasons are declared initially as they are constant
+
+		# TODO: @NS - This will need to get a list of unique GSPs from the DataFrame, I've had a guess at what this
+		# TODO: @NS... will need to be but please confirm.
+		# Retrieve unique list of GSPs from the DataFrame
+		#   set() will reduce this to only a unique list
+		#   list() will convert back to a list so that it can be used
+		self.load_gsps = list(set(df.loc[:, common_functions.Headers.gsp]))
+
+		# TODO: @DM - At this point may be necessary to actually force the GUI to update, need to
+		# TODO: @DM... check the GUI combobox behaviour
 		return None
+
 
 class CreateToolTip(object):
 	"""
