@@ -15,7 +15,6 @@ import tkFileDialog
 import tkMessageBox
 import os
 import logging
-
 import webbrowser
 from PIL import Image, ImageTk
 from collections import OrderedDict
@@ -23,8 +22,11 @@ from collections import OrderedDict
 # Package specific imports
 import load_est.psse as psse
 import load_est.constants as constants
+import load_est.dataframe_maker_modifier as dataframe_maker_modifier
+import load_est.common_functions as common_functions
+
+# TODO: @NS - References to the Main script should be removed so that it can become a stand alone package
 import Load_Estimates_to_PSSE
-import dataframe_maker_modifier
 
 
 class CustomStyles:
@@ -625,12 +627,16 @@ class MainGUI:
 	def scale_loads_gens(self):
 
 		if self.load_radio_opt_sel.get() == 1:
+			# TODO: @NS - This function should be moved to a different location (maybe common_functions) to avoid it
+			# TODO: @NS... having to import a the Main python script.
 			Load_Estimates_to_PSSE.scale_all_loads(
 				year=self.load_year_selected.get(),
 				season=self.load_demand_scaling_selected.get()
 				)
 
 		if self.gen_radio_opt_sel.get() == 1:
+			# TODO: @NS - This function should be moved to a different location (maybe common_functions) to avoid it
+			# TODO: @NS... having to import a the Main python script.
 			Load_Estimates_to_PSSE.scale_all_gens(
 				pc=self.gen_percent_entry.get()
 				)
@@ -1224,6 +1230,20 @@ class MainGUI:
 		else:
 			return None
 
+	def set_gui_param(self, df):
+		"""
+			Function will set extract the data from the DataFrame with regards to the Loads available from the
+			load estimates
+		:param pd.DataFrame df:  Raw dataframe that has been processed
+		:return None:
+		"""
+		# TODO: @NS - Extract list of years from the DataFrame, use of common.adjust_years
+		# Find the years being considered for the forecast
+		self.load_year_list = common_functions.adjust_years(headers_list=list(df.columns))
+		self.demand_scaling_list=df
+		self.load_gsps=df
+
+		return None
 
 class CreateToolTip(object):
 	"""

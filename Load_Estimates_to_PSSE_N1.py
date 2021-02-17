@@ -36,7 +36,7 @@ class Station:
 	def __init__(self, df, st_type):
 		"""
 		Station class init function to initialise station object properties
-		:param pd.Dataframe() df_fr: dataframe containing one station information from excel spreadsheet
+		:param pd.Dataframe() df: dataframe containing one station information from excel spreadsheet
 		:param st_type: either 'BSP' or 'Primary'
 		"""
 
@@ -538,6 +538,7 @@ def exp_stations_to_excel(st_dict):
 def scale_all_loads(year=str(), season=str()):
 	"""
 	Function to update station loads
+	TODO: @NS - This function should be moved within load_est module
 	:param str() year:
 	:param str() season:
 	:return:
@@ -601,6 +602,7 @@ def scale_all_loads(year=str(), season=str()):
 def scale_all_gens(pc=float()):
 	"""
 	Function to Scale all generation in case by scaling percentage
+	TODO: @NS - This function should be moved within load_est module
 	:param pc:
 	:return:
 	"""

@@ -142,7 +142,7 @@ def excel_data_comparison_maker(FILE_NAME_INPUT_1,FILE_NAME_INPUT_2,Bad_Data_Inp
 	FILE_PTH_INPUT_Bad_Data = common.get_local_file_path(file_name=Bad_Data_Input_Name)
 	FILE_PTH_INPUT_Good_Data = common.get_local_file_path(file_name=Good_Data_Input_Name)
 
-	FILE_NAME_OUTPUT = common.excel_file_names.data_comparison_excel_name
+	FILE_NAME_OUTPUT = common.ExcelFileNames.data_comparison_excel_name
 	FILE_PTH_OUTPUT = common.get_local_file_path(file_name=FILE_NAME_OUTPUT)
 
 	# Engine to use when writing excel workbooks (XlsxWriter needed for formatting of tabs)
@@ -178,14 +178,14 @@ if __name__ == '__main__':
 	# FILE_PTH_OUTPUT = common.get_local_file_path(file_name=FILE_NAME_OUTPUT)
 	#FILE_PTH_OUTPUT = common.get_local_file_path(file_name=FILE_NAME_OUTPUT)
 	# Engine to use when writing excel workbooks (XlsxWriter needed for formatting of tabs)
-	# FILE_NAME_INPUT_1 = common.excel_file_names.df_raw_excel_name
-	# FILE_NAME_INPUT_2 = common.excel_file_names.df_modified_excel_name
-	# Bad_Data_Input_Name = common.excel_file_names.bad_data_excel_name
+	# FILE_NAME_INPUT_1 = common.ExcelFileNames.df_raw_excel_name
+	# FILE_NAME_INPUT_2 = common.ExcelFileNames.df_modified_excel_name
+	# Bad_Data_Input_Name = common.ExcelFileNames.bad_data_excel_name
 	# FILE_NAME_INPUT_2 = 'Processed Load Estimates_p_modified.xlsx'
-	FILE_NAME_INPUT_1 = common.excel_file_names.df_raw_excel_name
-	FILE_NAME_INPUT_2 = common.excel_file_names.df_modified_excel_name
-	Bad_Data_Input_Name = common.excel_file_names.bad_data_excel_name
-	Good_Data_Input_Name = common.excel_file_names.good_data_excel_name
+	FILE_NAME_INPUT_1 = common.ExcelFileNames.df_raw_excel_name
+	FILE_NAME_INPUT_2 = common.ExcelFileNames.df_modified_excel_name
+	Bad_Data_Input_Name = common.ExcelFileNames.bad_data_excel_name
+	Good_Data_Input_Name = common.ExcelFileNames.good_data_excel_name
 
 	excel_data_comparison_maker(FILE_NAME_INPUT_1=FILE_NAME_INPUT_1,FILE_NAME_INPUT_2=FILE_NAME_INPUT_2,\
 								Bad_Data_Input_Name=Bad_Data_Input_Name,Good_Data_Input_Name=Good_Data_Input_Name)

@@ -18,7 +18,7 @@ import collections
 
 # GLOBAL constants
 # Target filename to use
-FILE_NAME_INPUT = common.excel_file_names.FILE_NAME_INPUT
+FILE_NAME_INPUT = common.ExcelFileNames.FILE_NAME_INPUT
 #FILE_NAME_OUTPUT = 'Processed Load Estimates_p_non_modified.xlsx'
 FILE_PTH_INPUT = common.get_local_file_path(file_name=FILE_NAME_INPUT)
 #FILE_PTH_OUTPUT = common.get_local_file_path(file_name=FILE_NAME_OUTPUT)
@@ -467,8 +467,8 @@ def bad_data_identifier(df_raw):
 
     bad_data = df_raw.loc[idx, :]
     good_data= df_raw.loc[~idx, :]
-    bad_data.to_excel(common.excel_file_names.bad_data_excel_name)
-    good_data.to_excel(common.excel_file_names.good_data_excel_name)
+    bad_data.to_excel(common.ExcelFileNames.bad_data_excel_name)
+    good_data.to_excel(common.ExcelFileNames.good_data_excel_name)
     return bad_data,good_data
 
 
@@ -478,7 +478,7 @@ if __name__ == '__main__':
     # Import raw DF
     fill_estimate=False
     fill_estimate_list=[False,True]
-    excel_output_name_list=[common.excel_file_names.df_raw_excel_name,common.excel_file_names.df_modified_excel_name]
+    excel_output_name_list=[common.ExcelFileNames.df_raw_excel_name, common.ExcelFileNames.df_modified_excel_name]
 
     for i in range(len(fill_estimate_list)):
         df = common.import_raw_load_estimates(pth_load_est=FILE_PTH_INPUT)
@@ -512,10 +512,10 @@ if __name__ == '__main__':
     # make an excel file of bad data
     bad_data,good_data=bad_data_identifier(df)
 
-    comparison.excel_data_comparison_maker(FILE_NAME_INPUT_1=common.excel_file_names.df_raw_excel_name,\
-                                           FILE_NAME_INPUT_2=common.excel_file_names.df_modified_excel_name,\
-                                           Bad_Data_Input_Name= common.excel_file_names.bad_data_excel_name,\
-                                           Good_Data_Input_Name=common.excel_file_names.good_data_excel_name)
+    comparison.excel_data_comparison_maker(FILE_NAME_INPUT_1=common.ExcelFileNames.df_raw_excel_name, \
+										   FILE_NAME_INPUT_2=common.ExcelFileNames.df_modified_excel_name, \
+										   Bad_Data_Input_Name= common.ExcelFileNames.bad_data_excel_name, \
+										   Good_Data_Input_Name=common.ExcelFileNames.good_data_excel_name)
 
     #raw_dataframe = common.sse_load_xl_to_df(xl_filename=FILE_PTH_INPUT, xl_ws_name='MASTER Based on SubstationLoad', headers=True)
 

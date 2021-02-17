@@ -399,8 +399,8 @@ def bad_data_identifier(df_raw):
 
 	bad_data = df_raw.loc[idx, :]
 	good_data = df_raw.loc[~idx, :]
-	bad_data.to_excel(common.excel_file_names.bad_data_excel_name)
-	good_data.to_excel(common.excel_file_names.good_data_excel_name)
+	bad_data.to_excel(common.ExcelFileNames.bad_data_excel_name)
+	good_data.to_excel(common.ExcelFileNames.good_data_excel_name)
 	return bad_data, good_data
 
 
@@ -411,7 +411,7 @@ def main(xl_path):
 	:return pd.DataFrame df_return:  DataFrame to return
 	"""
 	local_fill_estimate_list = [False, True]
-	excel_output_name_list = [common.excel_file_names.df_raw_excel_name, common.excel_file_names.df_modified_excel_name]
+	excel_output_name_list = [common.ExcelFileNames.df_raw_excel_name, common.ExcelFileNames.df_modified_excel_name]
 
 	# Create an empty list to store the results in, the final set is then returned
 	dfs = list()
@@ -452,10 +452,10 @@ def main(xl_path):
 	# bad_data, good_data = bad_data_identifier(df)
 
 	comparison.excel_data_comparison_maker(
-		FILE_NAME_INPUT_1=common.excel_file_names.df_raw_excel_name,
-		FILE_NAME_INPUT_2=common.excel_file_names.df_modified_excel_name,
-		Bad_Data_Input_Name=common.excel_file_names.bad_data_excel_name,
-		Good_Data_Input_Name=common.excel_file_names.good_data_excel_name
+		FILE_NAME_INPUT_1=common.ExcelFileNames.df_raw_excel_name,
+		FILE_NAME_INPUT_2=common.ExcelFileNames.df_modified_excel_name,
+		Bad_Data_Input_Name=common.ExcelFileNames.bad_data_excel_name,
+		Good_Data_Input_Name=common.ExcelFileNames.good_data_excel_name
 	)
 
 	# DataFrame to return is the last one that was processed
@@ -464,7 +464,7 @@ def main(xl_path):
 
 
 if __name__ == '__main__':
-	FILE_NAME_INPUT = common.excel_file_names.FILE_NAME_INPUT
+	FILE_NAME_INPUT = common.ExcelFileNames.FILE_NAME_INPUT
 	# FILE_NAME_OUTPUT = 'Processed Load Estimates_p_non_modified.xlsx'
 	FILE_PTH_INPUT = common.get_local_file_path(file_name='2019-20 SHEPD Load Estimates - v6-check.xlsx')
 
