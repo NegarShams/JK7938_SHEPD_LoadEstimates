@@ -375,6 +375,8 @@ class PSSE:
 	# Minimum fault time that can be considered (in seconds)
 	min_fault_time = 0.0001
 
+
+
 	# Dependant on whether running in PSSE 33 or 34
 	if 'PROGRAMFILES(X86)' in os.environ:
 		program_files_directory = r'C:\Program Files (x86)\PTI'
@@ -545,6 +547,8 @@ class Loads:
 	bus = 'NUMBER'
 	load = 'MVAACT'
 	identifier = 'ID'
+
+	default_id = '1'
 
 	def __init__(self):
 		"""

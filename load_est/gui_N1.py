@@ -641,48 +641,6 @@ class MainGUI:
 				pc=self.gen_percent_entry.get()
 				)
 
-		# print('Load Scaling Options: '),
-		# print(self.load_radio_opts[self.load_radio_opt_sel.get()])
-		# print
-		# print ('Year selected: '),
-		# print(self.load_year_selected.get())
-		# print
-		# print ('Demand Scaling selected: '),
-		# print(self.load_demand_scaling_selected.get())
-		# print
-
-		# if self.load_bool_var_gsp:
-		# 	for gsp in self.load_gsps:
-		# 		if self.load_bool_var_gsp[gsp].get():
-		# 			self.load_gsps_selected.append(gsp)
-		#
-		# if self.load_bool_var_zone:
-		# 	for zone_num, zone_name in self.zone_dict.iteritems():
-		# 		if self.load_bool_var_zone[zone_num].get():
-		# 			self.load_zones_selected[zone_num] = zone_name
-		#
-		# if self.gen_bool_var_zone:
-		# 	for zone_num, zone_name in self.zone_dict.iteritems():
-		# 		if self.gen_bool_var_zone[zone_num].get():
-		# 			self.gen_zones_selected[zone_num] = zone_name
-		#
-		# print ('Load GSPs Selected: '),
-		# print(self.load_gsps_selected)
-		# print
-		# print ('Load Zones Selected: '),
-		# print(self.load_zones_selected)
-		# print
-		#
-		# print('Gen Scaling Options: '),
-		# print(self.gen_radio_opts[self.gen_radio_opt_sel.get()])
-		# print
-		# print ('Gen Scaling %: '),
-		# print(self.gen_percent_entry.get())
-		# print
-		# print ('Gen Zones Selected: '),
-		# print(self.gen_zones_selected)
-		# print
-
 		# Reset to empty entries
 		self.load_gsps_selected = list()
 		self.load_zones_selected = dict()

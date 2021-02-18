@@ -9,6 +9,7 @@ import load_est
 import load_est.psse as psse
 # psse = reload(psse)
 import load_est.constants as constants
+import load_est.common_functions as common_functions
 # constants = reload(constants)
 import logging
 import collections
@@ -535,12 +536,19 @@ def exp_stations_to_excel(st_dict):
 	return df
 
 
-def scale_all_loads(year=str(), season=str()):
+def scale_all_loads(df_load_values, year=str(), season=str(), diverse=False, zone=tuple(), gsp=tuple()):
 	"""
 	Function to update station loads
 	TODO: @NS - This function should be moved within load_est module
-	:param str() year:
-	:param str() season:
+
+	:param pd.DataFrame df_load_values:  DataFrame with all of the load values needed for scaling
+	:param str() year:  Year loads should be scaled for
+	:param str() season:  Season years should be scaled for
+	TODO: @NS - I've added a new input below for selecting whether to use aggregate or diverse values
+	:param bool diverse:  Whether to scale for the diversified or aggregate load values
+	TODO: @NS - I've added new inputs that allow the user to select specific GSPs or Zones
+	:param tuple zone:  Populated with a list of zones if the user selects specific zones to consider
+	:param tuple gsp:  Populated with a list of gsps if the user selects specific zones to consider
 	:return:
 	"""
 
@@ -553,48 +561,76 @@ def scale_all_loads(year=str(), season=str()):
 	loads_df = loads.df.set_index('NUMBER')
 	loads_list = map(int, list(loads_df.index))
 
-	for station_no, station in constants.General.station_dict.iteritems():
+	# TODO: @NS - The following code needs to be changed as follows
+	# TODO: @NS... 1. Apply filter to select only Primary substations since not PSSe loads modelled explicitly for GSPs
+	# TODO: @NS... 2. Apply filter to select only GSPs or Zones that have been provided as an input
+	# TODO: @NS... 3. Loop through remaining DataFrame and set load values for the appropriate year (psuedo code below)
 
-		# for num, psse_bus in station.psse_buses_dict.iteritems():
+	# TODO: @NS - Note, the following is just a suggested example and it maybe worth breaking up into smaller functions
+	for idx, substation in df_filtered.iterrows():
+		# TODO: @NS - Calculate substation P and Q
+		p = substation[year] * substation[season] * substation[pf]
+		q =
 
-			# p = station.load_forecast_dict[year] * station.seasonal_percent_dict[season] * station.pf['p.f']
-			# q = p * math.tan(math.acos(station.pf['p.f']))
-			#
-			# # if there is load at the station bus
-			# if psse_bus in loads_list:
-			# 	ierr = psspy.load_chng_5(
-			# 		ibus=psse_bus,
-			# 		id=loads_df.loc[psse_bus, 'ID'],
-			# 		realar1=p,  # P load MW
-			# 		realar2=q)  # Q load MW
+		# Loop through each busbar in substation
+		# TODO: @NS - Need some way to be able to loop through all of the busbars associated with a substation
+		for bus in substations[buses]:
 
-		for i in xrange(0, station.no_sub_stations):
+			p_bus = p * bus[proportion]
+			q_bus = q * bus[proportion]
 
-			sub_station = station.sub_stations_dict[i]
+			# Confirm busbar exists in model and if so update, otherwise alert user
+			if bus[busbar_number] in loads_list:
+				# Set the load value for this busbar
+				# TODO: @NS - Should make use of the psse.LoadData() class rather than this function, will come back to that
+				ierr = psspy.load_chng_5(
+					i=bus[busbar_number],
+					id=constants.Loads.default_id,
+					realar1=p_bus,  # P load MW
+					realar2=q_bus	# Q load Mvar
+				)
+				logger.debug((
+								 'PSSE busbar {} associated with {} updated with a new P/Q value of {:.2f}/{:.2f}'
+							 ).format(bus[busbar_number], substation[name], p_bus, q_bus)
+							 )
+			else:
+				logger.error((
+								 'PSSE busbar {} associated with {} not found in PSSe model'
+							 ).format(bus[busbar_number], substation[name])
+							 )
 
-			if sub_station.idv_scalable:
+			# TODO: @NS - We will also need to disconnect any other loads modelled at this busbar already in the model
+			# TODO: @NS... to ensure the total load numbers are reaonsable
 
-				for sub_num, sub_psse_bus in sub_station.psse_buses_dict.iteritems():
-
-					if math.isnan(sub_psse_bus['bus_no']):
-						continue
-					if sub_psse_bus['bus_no'] in loads_list:
-						p = sub_station.load_forecast_dict[year] * \
-							sub_station.seasonal_percent_dict[season] * \
-							sub_station.pf['p.f'] * \
-							sub_psse_bus['pc']
-
-						q = p * math.tan(math.acos(sub_station.pf['p.f']))
-						# loads at the substations buses
-
-						ierr = psspy.load_chng_5(
-							i=sub_psse_bus['bus_no'],
-							id=loads_df.loc[sub_psse_bus['bus_no'], 'ID'],
-							realar1=p,  # P load MW
-							realar2=q)  # Q load MW
-						break
-					else:
-						logger.info('Bus number ' + str(sub_psse_bus) + ' not in PSSE sav case')
+	# for station_no, station in constants.General.station_dict.iteritems():
+	#
+	# 	for i in xrange(0, station.no_sub_stations):
+	#
+	# 		sub_station = station.sub_stations_dict[i]
+	#
+	# 		if sub_station.idv_scalable:
+	#
+	# 			for sub_num, sub_psse_bus in sub_station.psse_buses_dict.iteritems():
+	#
+	# 				if math.isnan(sub_psse_bus['bus_no']):
+	# 					continue
+	# 				if sub_psse_bus['bus_no'] in loads_list:
+	# 					p = sub_station.load_forecast_dict[year] * \
+	# 						sub_station.seasonal_percent_dict[season] * \
+	# 						sub_station.pf['p.f'] * \
+	# 						sub_psse_bus['pc']
+	#
+	# 					q = p * math.tan(math.acos(sub_station.pf['p.f']))
+	# 					# loads at the substations buses
+	#
+	# 					ierr = psspy.load_chng_5(
+	# 						i=sub_psse_bus['bus_no'],
+	# 						id=loads_df.loc[sub_psse_bus['bus_no'], 'ID'],
+	# 						realar1=p,  # P load MW
+	# 						realar2=q)  # Q load MW
+	# 					break
+	# 				else:
+	# 					logger.info('Bus number ' + str(sub_psse_bus) + ' not in PSSE sav case')
 
 	return None
 
