@@ -547,6 +547,8 @@ class Loads:
 	bus = 'NUMBER'
 	load = 'MVAACT'
 	identifier = 'ID'
+	status='STATUS'
+	zone='ZONE'
 
 	default_id = '1'
 
@@ -621,6 +623,7 @@ class Busbars:
 	nominal = 'BASE'
 	voltage = 'PU'
 	bus_name = 'EXNAME'
+	zone='ZONE'
 
 	# Busbar type code lookup
 	generator_bus_type_code = 2
