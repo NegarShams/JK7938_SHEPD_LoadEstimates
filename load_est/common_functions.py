@@ -504,32 +504,6 @@ def load_dill(variable_name, dill_folder_name):
 
     return df
 
-def mapper(df_map, df,columns_df_map,columns_df):
-    """
-        Function returns(loads) a dataframe which was saved as variable_name +.dill under dill_folder_name folder
-    :param list variable_name:  Name of the dill (without .dill) (a list of strings)
-    :param str dill_folder_name:  Name of folder
-    :return pd df:  a dataframe loaded from the dilled file
-    """
-    # variable_name = ['good_data']
-
-    i=[1]
-    dill_or_not = [False]
-    load_dill = True
-    # dill_folder_name = folder_file_names.dill_folder
-    variable_dict = batch_dill_maker_loader_no_xl(variable_value_list=i, variable_list=variable_name,
-                                                  variables_to_be_dilled=dill_or_not, load_dill=load_dill,
-                                                  dill_folder_name=dill_folder_name)
-    df = variable_dict[variable_name[0]]
-    if 'index' in list(df.columns):
-        df = df.drop(['index'], axis=1)
-
-    df = df.set_index((list(df.columns)[0]))
-
-    return df
-
-
-
 
 
 if __name__ == '__main__':
