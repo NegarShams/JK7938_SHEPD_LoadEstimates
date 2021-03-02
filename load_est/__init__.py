@@ -29,6 +29,9 @@ __status__ = 'Development'
 # Python version issue.
 designed_python_version = [2, 7, 9]
 
+# This is the full path for this package
+PACKAGE_PATH = os.path.dirname(__file__)
+
 def find_python_executable():
 	"""
 		Function finds the python executable that is being used to run this code

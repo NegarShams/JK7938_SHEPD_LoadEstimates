@@ -20,6 +20,7 @@ from PIL import Image, ImageTk
 from collections import OrderedDict
 
 # Package specific imports
+import load_est
 import load_est.psse as psse
 import load_est.constants as constants
 import load_est.dataframe_maker_modifier as dataframe_maker_modifier
@@ -1203,10 +1204,10 @@ class MainGUI:
             else:
                 self.load_complete_lbl_t_f.configure(
                     text=constants.General.loads_complete_f_str, foreground='red', cursor='hand2')
-                file_path = os.path.join(
-                    constants.General.curPath,
+                file_path = os.path.abspath(os.path.join(
+                    load_est.PACKAGE_PATH, '..',
                     constants.XlFileConstants.params_folder,
-                    constants.XlFileConstants.xl_checks_file_name)
+                    constants.XlFileConstants.xl_checks_file_name))
                 self.load_complete_lbl_t_f.bind("<Button-1>", lambda e: webbrowser.open_new(file_path))
 
             # update GUI variables

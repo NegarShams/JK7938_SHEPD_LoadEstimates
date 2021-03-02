@@ -702,7 +702,8 @@ def process_load_estimates_xl(xl_path):
 
 
 	# Check params folder exists to store log files in and if not create appropriate folders
-	params_folder = os.path.join(constants.General.cur_path, constants.XlFileConstants.params_folder) # what is cur_path??
+	# Params folder is located one directory above the PACKAGE_PATH
+	params_folder = os.path.join(load_est.PACKAGE_PATH, '..', constants.XlFileConstants.params_folder) # what is cur_path??
 	if not os.path.exists(params_folder):
 		os.mkdir(params_folder)
 
@@ -741,10 +742,11 @@ def create_params_pkl(station_dict, xl_path):
 	params_dict[constants.SavedParamsStrings.scalable_GSP_list_str] = sorted(temp_list)
 
 	# save a pickle/dill file of the params dict to speed up processing later
-	with open(os.path.join(
-			constants.General.cur_path,
-			constants.XlFileConstants.params_folder,
-			constants.SavedParamsStrings.params_file_name),
+	with open(os.path.abspath(
+			os.path.join(
+				load_est.PACKAGE_PATH, '..',
+				constants.XlFileConstants.params_folder,
+				constants.SavedParamsStrings.params_file_name)),
 			'wb') as f:
 		dill.dump(params_dict, f)
 
@@ -806,14 +808,13 @@ if __name__ == '__main__':
 	psse_con = load_est.psse.PsseControl()
 	logger.log_colouring(run_in_psse=psse_con.run_in_psse)
 
-	constants.General.cur_path = os.path.dirname(__file__)
-
-	# if there is a params file load this and set constants
-	params_file = os.path.join(
-		constants.General.cur_path,
+	# If there is a params file load this and set constants, the params file is stored in the params folder
+	# which is located in the directory one level higher than the load_est module
+	params_file = os.path.abspath(os.path.join(
+		load_est.PACKAGE_PATH, '..',
 		constants.XlFileConstants.params_folder,
 		constants.SavedParamsStrings.params_file_name
-	)
+	))
 	if os.path.exists(params_file):
 		with open(params_file, 'rb') as f:
 			constants.General.params_dict = dill.load(f)

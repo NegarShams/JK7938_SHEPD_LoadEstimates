@@ -30,8 +30,6 @@ class General:
 		General constants
 	"""
 
-	curPath = str()
-
 	params_dict = dict()
 	scalable_GSP_list = list()
 	years_list = list()

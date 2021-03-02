@@ -23,6 +23,7 @@ from PIL import Image, ImageTk
 from collections import OrderedDict
 
 # Package specific imports
+import load_est
 import load_est.psse as psse
 import load_est.constants as constants
 import Load_Estimates_to_PSSE
@@ -391,10 +392,10 @@ class MainGUI:
 
 		# if there are errors in the load file make the label open the excel summary file
 		if not constants.General.loads_complete and constants.General.xl_file_name:
-			file_path = os.path.join(
-				constants.General.curPath,
+			file_path = os.path.abspath(os.path.join(
+				load_est.PACKAGE_PATH, '..',
 				constants.XlFileConstants.params_folder,
-				constants.XlFileConstants.xl_checks_file_name)
+				constants.XlFileConstants.xl_checks_file_name))
 			self.load_complete_lbl_t_f.bind("<Button-1>", lambda e: webbrowser.open_new(file_path))
 			self.load_complete_lbl_t_f.configure(cursor='hand2')
 
@@ -1253,10 +1254,11 @@ class MainGUI:
 			else:
 				self.load_complete_lbl_t_f.configure(
 					text=constants.General.loads_complete_f_str, foreground='red', cursor='hand2')
-				file_path = os.path.join(
-					constants.General.curPath,
+				# File path needs to point to the file xl_checks_file_name that has been created
+				file_path = os.path.abspath(os.path.join(
+					load_est.PACKAGE_PATH, '..',
 					constants.XlFileConstants.params_folder,
-					constants.XlFileConstants.xl_checks_file_name)
+					constants.XlFileConstants.xl_checks_file_name))
 				self.load_complete_lbl_t_f.bind("<Button-1>", lambda e: webbrowser.open_new(file_path))
 
 			# update GUI variables
