@@ -639,8 +639,6 @@ class MainGUI:
         # f_load_values, year = str(), season = str(), diverse = False, zone = tuple(), gsp = tuple()
 
         if self.load_radio_opt_sel.get() == 1:
-            # TODO: @NS - This function should be moved to a different location (maybe common_functions) to avoid it
-            # TODO: @NS... having to import a the Main python script.
             # todo: @ask David, how to add a toggle for divers, gsp, and zones to give them as an input here
             # todo: @NS-I load the dilled good data if it does not exist then ask the user to first load excel file
             # zone = ()
@@ -661,6 +659,12 @@ class MainGUI:
             # todo: @ask David:
             #  the following gsp and zone values are not obtained from the gui values, first the gui needs to update in
             #  set_gui_param
+            # Check if All Loads selected
+
+            # Otherwise populate with selected GSPs / Zones
+            self.load_gsps_selected = (
+                gsp_name for gsp_name, bool_var in self.load_bool_var_gsp.items() if bool_var.get() == 1
+            )
 
             scale.scale_loads(df_load_values=df, year=self.load_year_selected.get(),
                               season=self.load_demand_scaling_selected.get(),
@@ -669,9 +673,7 @@ class MainGUI:
 
 
         if self.gen_radio_opt_sel.get() == 1:
-            # TODO: @NS - This function should be moved to a different location (maybe common_functions) to avoid it
-            # TODO: @NS... having to import a the Main python script.
-            # todo: @N_I adds zones to be filtered as well
+
             # Load_Estimates_to_PSSE.scale_all_gens(
             # 	pc=self.gen_percent_entry.get()
             # 	)
@@ -693,7 +695,7 @@ class MainGUI:
 		frame
 		:return:
 		"""
-
+        # none load scaling option
         if self.load_radio_opt_sel.get() == 0:
             # disable year and seasons drop downs and labels
             self.load_year_om.config(state=Tk.DISABLED)
@@ -702,7 +704,7 @@ class MainGUI:
             self.load_demand_scaling_om_lbl.config(foreground='grey')
             # remove the bottom load selector
             self.remove_load_scroll_frame()
-
+        # All load scaling option
         elif self.load_radio_opt_sel.get() == 1:
             # enable year and seasons drop downs and labels
             self.load_year_om.config(state=Tk.NORMAL)
@@ -712,7 +714,7 @@ class MainGUI:
             # remove the bottom load selector
             self.remove_load_scroll_frame()
             self.cmd_scale_load_gen.configure(state=Tk.NORMAL)
-
+        # All load scaling option, for GSP/Zones selection
         elif self.load_radio_opt_sel.get() > 1 and self.load_radio_opt_sel.get() != self.load_prev_radio_opt:
             # enable year and seasons drop downs and labels
             self.load_year_om.config(state=Tk.NORMAL)
@@ -757,7 +759,7 @@ class MainGUI:
         return None
 
     def create_load_select_frame(self):
-
+        # it creates a frame of GSP/zone user selection form
         lbl = ''
         if self.load_radio_opt_sel.get() == 2:
             lbl = 'Select GSP(s):'
@@ -1211,8 +1213,8 @@ class MainGUI:
                 self.load_complete_lbl_t_f.bind("<Button-1>", lambda e: webbrowser.open_new(file_path))
 
             # update GUI variables
-            self.load_gsps = constants.General.scalable_GSP_list
-            self.load_year_om.configure(values=constants.General.years_list)
+            #self.load_gsps = constants.General.scalable_GSP_list
+            self.load_year_om.configure(values=self.load_year_list)
             self.load_demand_scaling_om.configure(values=constants.General.demand_scaling_list)
 
         return None
