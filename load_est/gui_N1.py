@@ -241,7 +241,7 @@ class MainGUI:
 
         # season drop down options
         self.load_demand_scaling_selected = Tk.StringVar()
-        self.load_demand_scaling_list = list(common_functions.Headers.seasons)
+        self.load_demand_scaling_list = common_functions.Headers.seasons
         self.load_demand_scaling_om = None
         self.load_demand_scaling_om_lbl = ttk.Label()
 
@@ -638,6 +638,7 @@ class MainGUI:
         # dataframe is loaded here
         # f_load_values, year = str(), season = str(), diverse = False, zone = tuple(), gsp = tuple()
 
+        #
         if self.load_radio_opt_sel.get() == 1:
             # todo: @ask David, how to add a toggle for divers, gsp, and zones to give them as an input here
             # todo: @NS-I load the dilled good data if it does not exist then ask the user to first load excel file
@@ -1166,7 +1167,7 @@ class MainGUI:
             filetypes=constants.General.file_types,
             title='Select SSE Load Estimates Spreadsheet'
         )
-
+        # todo: @ DM: add the function to identify whether a dill exist and if it's newer than the file selected
         if file_path:
             # set load estimates to file path
             load_estimates_xl = file_path
@@ -1206,16 +1207,22 @@ class MainGUI:
             else:
                 self.load_complete_lbl_t_f.configure(
                     text=constants.General.loads_complete_f_str, foreground='red', cursor='hand2')
+
+                # file_path = os.path.abspath(os.path.join(
+                #     load_est.PACKAGE_PATH, '..',
+                #     constants.XlFileConstants.params_folder,
+                #     constants.XlFileConstants.xl_checks_file_name))
+
                 file_path = os.path.abspath(os.path.join(
-                    load_est.PACKAGE_PATH, '..',
-                    constants.XlFileConstants.params_folder,
-                    constants.XlFileConstants.xl_checks_file_name))
+                    load_est.PACKAGE_PATH,
+                    common_functions.ExcelFileNames.data_comparison_excel_name))
+
                 self.load_complete_lbl_t_f.bind("<Button-1>", lambda e: webbrowser.open_new(file_path))
 
             # update GUI variables
             #self.load_gsps = constants.General.scalable_GSP_list
             self.load_year_om.configure(values=self.load_year_list)
-            self.load_demand_scaling_om.configure(values=constants.General.demand_scaling_list)
+            #self.load_demand_scaling_om.configure(values=constants.General.demand_scaling_list)
 
         return None
 

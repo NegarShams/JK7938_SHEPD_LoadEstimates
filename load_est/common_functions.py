@@ -128,10 +128,12 @@ class Headers:
     voltage = 'Voltage Ratio'
     psse_1 = 'PSS/E Bus #1'
     winter_peak = 'Winter Peak'
+    #winter_peak = 'N'
     spring_autumn = 'Spring/Autumn'
     summer = 'Summer'
     min_demand = 'Minimum Demand'
-    seasons = (winter_peak, spring_autumn, summer, min_demand)
+    # the below list is also used in the gui load scaling set up for the drop down options
+    seasons = [winter_peak, spring_autumn, summer, min_demand]
     pf_column_df = '2019 / 20 Peak (MW)'
     pf_column_df_1 = 'Date & time of  Peak'
 
