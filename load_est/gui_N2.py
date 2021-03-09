@@ -215,7 +215,6 @@ class MainGUI:
         self.cmd_import_load_estimates = ttk.Button()
         self.cmd_scale_load_gen = ttk.Button()
 
-
         # PSC logo constants (required so position can be moved)
         self.psc_info = Tk.Label()
         self.hyp_user_manual = ttk.Label()
@@ -258,8 +257,6 @@ class MainGUI:
         self.load_divers_list = common_functions.Headers.loads_divers
         self.load_divers_om = None
         self.load_divers_om_lbl = ttk.Label()
-
-
 
         # Load Selector scroll constants
         self.load_side_lbl = ttk.Label()
@@ -509,8 +506,6 @@ class MainGUI:
         )
         self.load_divers_om.configure(state=Tk.DISABLED)
 
-
-
         return None
 
     def create_gen_options(self):
@@ -675,13 +670,22 @@ class MainGUI:
         # dataframe is loaded here
         # f_load_values, year = str(), season = str(), diverse = False, zone = tuple(), gsp = tuple()
 
-        #
+        # if self.load_radio_opt_sel.get() == 1:
+        if self.load_divers_selected.get() == 'Diverse':
+            diverse = True
+        else:
+            diverse = False
+
+        # all loads
         if self.load_radio_opt_sel.get() == 1:
             # todo: @ask David, how to add a toggle for divers, gsp, and zones to give them as an input here
-            # todo: @NS-I load the dilled good data if it does not exist then ask the user to first load excel file
             # zone = ()
             # gsp = ()
-            diverse = True  # todo: this should be coming from a toggle of the GUI in load scale options
+            # diverse = True
+            # zones = ()
+            # gsps = ()
+            # todo: this should be coming from a toggle of the GUI in load scale options
+
             # self.load_gsps_selected = list()
             # self.load_zones_selected = dict()
             # gsps = self.load_gsps_selected.get()
@@ -691,6 +695,10 @@ class MainGUI:
             # 	year=self.load_year_selected.get(),
             # 	season=self.load_demand_scaling_selected.get()
             # 	)
+            scale.scale_loads(df_load_values=df, year=self.load_year_selected.get(),
+                              season=self.load_demand_scaling_selected.get(),
+                              diverse=diverse, zone=(),
+                              gsp=())
 
             # scale.scale_loads(df_load_values=df,year=self.load_year_selected.get(),
             # season=self.load_demand_scaling_selected.get(), diverse=diverse ,zone=zone, gsp=gsp)
@@ -698,20 +706,53 @@ class MainGUI:
             #  the following gsp and zone values are not obtained from the gui values, first the gui needs to update in
             #  set_gui_param
             # Check if All Loads selected
+            k=1
 
             # Otherwise populate with selected GSPs / Zones
+            # self.load_gsps_selected = (
+            #     gsp_name for gsp_name, bool_var in self.load_bool_var_gsp.items() if bool_var.get() == 1
+            # )
+            # # todo: convert the diverse button value which is a string (diverese,aggeragte) to 0 or 1
+            # scale.scale_loads(df_load_values=df, year=self.load_year_selected.get(),
+            #                   season=self.load_demand_scaling_selected.get(),
+            #                   diverse=self.load_divers_selected.get(), zone=self.load_zones_selected.get(),
+            #                   gsp=self.load_gsps_selected.get())
+        # gsps selected
+        if self.load_radio_opt_sel.get() == 2:
+
             self.load_gsps_selected = (
                 gsp_name for gsp_name, bool_var in self.load_bool_var_gsp.items() if bool_var.get() == 1
             )
-            # todo: convert the diverse button value which is a string (diverese,aggeragte) to 0 or 1
             scale.scale_loads(df_load_values=df, year=self.load_year_selected.get(),
                               season=self.load_demand_scaling_selected.get(),
-                              diverse=self.load_divers_selected.get(), zone=self.load_zones_selected.get(), gsp=self.load_gsps_selected.get())
+                              diverse=diverse, zone=(),
+                              gsp=self.load_gsps_selected.get())
+        # zones selected
+        if self.load_radio_opt_sel.get() == 3:
+            self.load_zones_selected = (
+                zone_name for zone_name, bool_var in self.load_bool_var_zone.items() if bool_var.get() == 1
+            )
+            scale.scale_loads(df_load_values=df, year=self.load_year_selected.get(),
+                              season=self.load_demand_scaling_selected.get(),
+                              diverse=diverse, zone=self.load_zones_selected.get(),
+                              gsp=())
 
+        # all gens
         if self.gen_radio_opt_sel.get() == 1:
             # Load_Estimates_to_PSSE.scale_all_gens(
             # 	pc=self.gen_percent_entry.get()
             # 	)
+
+            # scale.scale_gens(pc=self.gen_percent_entry.get())
+            scale.scale_gens(pc=self.gen_percent_entry.get(), zone=())
+        # selected zone gens
+        if self.gen_radio_opt_sel.get() == 2:
+            # Load_Estimates_to_PSSE.scale_all_gens(
+            # 	pc=self.gen_percent_entry.get()
+            # 	)
+            self.gen_zones_selected = (
+                zone_name for zone_name, bool_var in self.gen_bool_var_zone.items() if bool_var.get() == 1
+            )
             # scale.scale_gens(pc=self.gen_percent_entry.get())
             scale.scale_gens(pc=self.gen_percent_entry.get(), zone=self.gen_zones_selected.get())
 
